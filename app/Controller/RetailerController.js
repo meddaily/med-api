@@ -23,7 +23,7 @@ module.exports.retailer_login = async (req, resp) => {
   // create jwt token
   console.log(req.body);
   const { phone, password } = req.body;
-  await Retailer.findOne({
+   Retailer.findOne({
     phonenumber: phone,
     password: password,
   }).then(async (result) => {
@@ -53,34 +53,36 @@ module.exports.retailer_register = async (req, resp) => {
       if (user) {
        return resp.send({ status: false, message: "Retailer already exist" });
       }
-   
+      
+      
+      var data = req.body;
+      
+      console.log("req files",req.files);
+      
+      const gstCertificateImage = req.files.find(
+        (file) => file.fieldname === "RetailerGSTCertificateImage"
+        );
+        const drugLicenseImage = req.files.find(
+          (file) => file.fieldname === "RetailerDrugLicenseImage"
+          );
+          
+          // console.log('data',data)
+          if (!gstCertificateImage || !drugLicenseImage) {
+            return resp.status(400).json({
+              message:
+              "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
+            });
+          }
+          
+          // // Check for the presence of "image1" and "image2" properties in req.files
+          // if (!req.files["RetailerDrugLicenseImage"] || !req.files["RetailerGSTCertificateImage"]) {
+            //   return resp.status(400).json({
+              //     message: "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
+              //   });
+              // }
+              
+              // console.log('req.files',req.files)
   
-    var data = req.body;
-
-    const gstCertificateImage = req.files.find(
-      (file) => file.fieldname === "RetailerGSTCertificateImage"
-    );
-      const drugLicenseImage = req.files.find(
-      (file) => file.fieldname === "RetailerDrugLicenseImage"
-    );
-  
-    // console.log('data',data)
-    if (!gstCertificateImage || !drugLicenseImage) {
-      return res.status(400).json({
-        message:
-          "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
-      });
-    }
-  
-    // // Check for the presence of "image1" and "image2" properties in req.files
-    // if (!req.files["RetailerDrugLicenseImage"] || !req.files["RetailerGSTCertificateImage"]) {
-    //   return resp.status(400).json({
-    //     message: "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
-    //   });
-    // }
-  
-  
-    console.log('req.files',req.files)
     // data.licenseimage = req.files["image1"][0].location;
     // data.gstimage = req.files["image2"][0].location;
    
@@ -141,7 +143,7 @@ module.exports.retailer_register = async (req, resp) => {
             panNumber,
           } = req.body;
           
-          console.log("reqbody:",req.body.businesstype);
+          console.log("reqbody:",req.body);
          const newData = {
           businesstype:  typeOfBusiness,
           businessname: businessName,
@@ -157,8 +159,12 @@ module.exports.retailer_register = async (req, resp) => {
           licenseno: licenseNumber,
           gstno:  gstInNumber,
           panno:  panNumber,
-          licenseimage: req.files[0].destination + '/' + req.files[0].filename,
-          gstimage: req.files[1].destination + '/' + req.files[1].filename,
+          licenseimage: `https://storage.googleapis.com/${bucket.name}/${drugLicenseImage.originalname}`,
+          gstimage: `https://storage.googleapis.com/${bucket.name}/${gstCertificateImage.originalname}`,
+          // licenseimage: req.body.GSTCertificateImage,
+          // gstimage: req.body.DrugLicenseImage,
+          // licenseimage: req.files[0].destination + '/' + req.files[0].filename,
+          // gstimage: req.files[1].destination + '/' + req.files[1].filename,
           }
     
           console.log("newdata>>>>>>>>>>>:",newData);

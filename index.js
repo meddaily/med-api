@@ -5,7 +5,8 @@ const cors = require("cors");
 const app = express();
 require("./config");
 require("dotenv").config();
-const upload = require("multer")();
+const multer = require('multer');
+const upload = multer();
 const PORT = process.env.PORT || 443;
 
 app.use(express.urlencoded({ extended: true }));

@@ -9,13 +9,41 @@ module.exports = (route) => {
   const ProductController = require("../Controller/ProductController.js");
   const upload = require("../Middleware/upload");
 
+// const multer = require("multer");
 
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     // Specify the destination directory where uploaded files will be stored locally
+//     cb(null, "local-path/");
+//   },
+//   filename: function (req, file, cb) {
+//     // Use the original filename for the uploaded file
+//     cb(null, Date.now().toString() + "_" + file.originalname);
+//   },
+// });
+
+// const fileFilter = (req, file, cb) => {
+//   const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+//   if (allowedMimeTypes.includes(file.mimetype)) {
+//     // Allow the file to be uploaded
+//     cb(null, true);
+//   } else {
+//     // Reject the file
+//     cb(new Error("Invalid file format"));
+//   }
+// };
+
+// const uploadRetailerImages = multer({
+//   fileFilter: fileFilter,
+//   storage: storage,
+// }).fields([
+//   { name: "RetailerDrugLicenseImage", maxCount: 1 },
+//   { name: "RetailerGSTCertificateImage", maxCount: 1 },
+// ]);
   // retailer routes
   route.post("/retailer_login", RetailerController.retailer_login);
   route.post(
     "/retailer_register",
-    // upload.any(),
-    // upload.uploadToS3multiple,
     RetailerController.retailer_register
   );
 
