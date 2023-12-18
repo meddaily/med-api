@@ -1,0 +1,9 @@
+# meddaily
+
+the page
+
+Made with ❤️ by meddaily. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
+
+## License
+
+Academic Free License v3.0 (undefined)
