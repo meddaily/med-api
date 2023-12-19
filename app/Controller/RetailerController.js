@@ -22,9 +22,9 @@ require("dotenv").config();
 module.exports.retailer_login = async (req, resp) => {
   // create jwt token
   console.log(req.body);
-  const { phone, password } = req.body;
+  const { phoneNumber, password } = req.body;
    Retailer.findOne({
-    phonenumber: phone,
+    phonenumber: phoneNumber,
     password: password,
   }).then(async (result) => {
     console.log(">>>>>>>>>>>>>>>",result);
