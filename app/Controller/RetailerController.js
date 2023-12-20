@@ -14,7 +14,8 @@ const token = require("../Models/token");
 const nodemailer = require('./nodemailer')
 const bcrypt = require("bcrypt");
 const { bucket } = require("../../firebase/firebase");
-
+const { v4: uuidv4 } = require('uuid');
+// const fs = require('fs/promises')
 
 require("dotenv").config();
 
@@ -23,11 +24,11 @@ module.exports.retailer_login = async (req, resp) => {
   // create jwt token
   console.log(req.body);
   const { phoneNumber, password } = req.body;
-   Retailer.findOne({
+  Retailer.findOne({
     phonenumber: phoneNumber,
     password: password,
   }).then(async (result) => {
-    console.log(">>>>>>>>>>>>>>>",result);
+    console.log(">>>>>>>>>>>>>>>", result);
     if (result != null) {
       const jwt = generateUsertoken(result);
       let saveToken = new token({ token: jwt });
@@ -46,106 +47,212 @@ module.exports.retailer_login = async (req, resp) => {
 
 // get user details using token
 module.exports.retailer_register = async (req, resp) => {
-  try{
-    console.log("Request Phone Number:", req.body.phone);
-    const user =  await Retailer.findOne({ phonenumber: req.body.phone })
-    // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", user);
-      if (user) {
-       return resp.send({ status: false, message: "Retailer already exist" });
-      }
-      
-      
-      var data = req.body;
-      
-      console.log("req files",req.files);
-      
-      const gstCertificateImage = req.files.find(
-        (file) => file.fieldname === "RetailerGSTCertificateImage"
-        );
-        const drugLicenseImage = req.files.find(
-          (file) => file.fieldname === "RetailerDrugLicenseImage"
-          );
-          
-          // console.log('data',data)
-          if (!gstCertificateImage || !drugLicenseImage) {
-            return resp.status(400).json({
-              message:
-              "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
-            });
-          }
-          
-          // // Check for the presence of "image1" and "image2" properties in req.files
-          // if (!req.files["RetailerDrugLicenseImage"] || !req.files["RetailerGSTCertificateImage"]) {
-            //   return resp.status(400).json({
-              //     message: "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
-              //   });
-              // }
-              
-              // console.log('req.files',req.files)
-  
+  try {
+    
+    const user = await Retailer.findOne({ phonenumber: req.body.phone })
+
+    if (user) {
+      return resp.send({ status: false, message: "Retailer already exist" });
+    }
+
+
+    var data = req.body;
+
+
+    const gstCertificateImage = req.files.find(
+      (file) => file.fieldname === "RetailerGSTCertificateImage"
+    );
+    const drugLicenseImage = req.files.find(
+      (file) => file.fieldname === "RetailerDrugLicenseImage"
+    );
+
+    // console.log('data',data)
+    if (!gstCertificateImage || !drugLicenseImage) {
+      return resp.status(400).json({
+        message:
+          "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
+      });
+    }
+
+    // // Check for the presence of "image1" and "image2" properties in req.files
+    // if (!req.files["RetailerDrugLicenseImage"] || !req.files["RetailerGSTCertificateImage"]) {
+    //   return resp.status(400).json({
+    //     message: "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
+    //   });
+    // }
+
+    // console.log('req.files',req.files)
+
     // data.licenseimage = req.files["image1"][0].location;
     // data.gstimage = req.files["image2"][0].location;
-   
-      // Handle GST Certificate image upload to Firebase Storage
-      const gstCertificateUpload = bucket.file(
-        `RetailerGSTCertificateImage/${gstCertificateImage.originalname}`
-      );
-      const gstCertificateBlobStream = gstCertificateUpload.createWriteStream();
-    
-      gstCertificateBlobStream.on("error", (error) => {
-        console.error("Error uploading GST Certificate image to Firebase:", error);
-        return next(error);
-      });
-    
-      gstCertificateBlobStream.on("finish", () => {
-        // GST Certificate image uploaded successfully
-        console.log(">>>>>>>>>>>>>>>>>>>>", bucket.name);
-        const gstCertificateImageUrl = `https://storage.googleapis.com/${bucket.name}/${gstCertificateUpload.name}`;
-        req.body.GSTCertificateImage = gstCertificateImageUrl;
-        console.log(gstCertificateImageUrl,'?????????????????????????????????????????????????????')
-        // Handle Drug License image upload to Firebase Storage
-        const drugLicenseUpload = bucket.file(
-          `RetailerDrugLicenseImage/${drugLicenseImage.originalname}`
-        );
-        const drugLicenseBlobStream = drugLicenseUpload.createWriteStream();
-    
-        drugLicenseBlobStream.on("error", (error) => {
-          console.error(
-            "Error uploading Retailer Drug License image to Firebase:",
-            error
-          );
-          return next(error);
-        });
-    
-        drugLicenseBlobStream.on("finish", async () => {
-          // Retailer Drug License image uploaded successfully
-          const drugLicenseImageUrl = `https://storage.googleapis.com/${bucket.name}/${drugLicenseUpload.name}`;
-    
-          // Update req.body with image URLs
-          // console.log(gstCertificateImageUrl)
-          console.log(drugLicenseImageUrl,'........................................................')
-          req.body.DrugLicenseImage = drugLicenseImageUrl;
 
-          const {
-            typeOfBusiness,
-            businessName,
-            ownerName,
-            businessAddress,
-            pincode,
-            city,
-            area,
-            phone,
-            password,
-            email,
-            pharmacistName,
-            licenseNumber,
-            gstInNumber,
-            panNumber,
-          } = req.body;
-          
-          console.log("reqbody:",req.body);
-         const newData = {
-          businesstype:  typeOfBusiness,
+    // Handle GST Certificate image upload to Firebase Storage
+
+    // ......................................................................................................
+    // const gstCertificateUpload = bucket.file(
+    //   `RetailerGSTCertificateImage/${gstCertificateImage.originalname}`
+    // );
+    // const gstCertificateBlobStream = gstCertificateUpload.createWriteStream();
+
+    // gstCertificateBlobStream.on("error", (error) => {
+    //   console.error("Error uploading GST Certificate image to Firebase:", error);
+    //   return next(error);
+    // });
+
+    // bucket.upload()
+
+    // gstCertificateBlobStream.on("finish", () => {
+    //   // GST Certificate image uploaded successfully
+    //   console.log(">>>>>>>>>>>>>>>>>>>>", bucket.name);
+    //   const gstCertificateImageUrl = `https://storage.googleapis.com/${bucket.name}/${gstCertificateUpload.name}`;
+    //   req.body.GSTCertificateImage = gstCertificateImageUrl;
+    //   console.log(gstCertificateImageUrl,'?????????????????????????????????????????????????????')
+    //   // Handle Drug License image upload to Firebase Storage
+    //   const drugLicenseUpload = bucket.file(
+    //     `RetailerDrugLicenseImage/${drugLicenseImage.originalname}`
+    //   );
+    //   const drugLicenseBlobStream = drugLicenseUpload.createWriteStream({
+    //     metadata :{
+    //       token: uuidv4()
+    //     }
+    //   });
+
+    //   drugLicenseBlobStream.on("error", (error) => {
+    //     console.error(
+    //       "Error uploading Retailer Drug License image to Firebase:",
+    //       error
+    //     );
+    //     return next(error);
+    //   });
+
+    //   drugLicenseBlobStream.on("finish", async () => {
+    //     // Retailer Drug License image uploaded successfully
+    //     const drugLicenseImageUrl = `https://storage.googleapis.com/${bucket.name}/${drugLicenseUpload.name}`;
+
+    //     // Update req.body with image URLs
+    //     // console.log(gstCertificateImageUrl)
+    //     console.log(drugLicenseImageUrl,'........................................................')
+    //     req.body.DrugLicenseImage = drugLicenseImageUrl;
+
+    //     const {
+    //       typeOfBusiness,
+    //       businessName,
+    //       ownerName,
+    //       businessAddress,
+    //       pincode,
+    //       city,
+    //       area,
+    //       phone,
+    //       password,
+    //       email,
+    //       pharmacistName,
+    //       licenseNumber,
+    //       gstInNumber,
+    //       panNumber,
+    //     } = req.body;
+
+    //     console.log("reqbody:",req.body);
+    //    const newData = {
+    //     businesstype:  typeOfBusiness,
+    //     businessname: businessName,
+    //     ownername: ownerName,
+    //     address: businessAddress,
+    //     pincode: pincode,
+    //     city: city,
+    //     area: area,
+    //     phonenumber: phone,
+    //     password: password,
+    //     email: email,
+    //     pharname:  pharmacistName,
+    //     licenseno: licenseNumber,
+    //     gstno:  gstInNumber,
+    //     panno:  panNumber,
+    //     licenseimage: `https://storage.googleapis.com/${bucket.name}/${drugLicenseImage.originalname}`,
+    //     gstimage: `https://storage.googleapis.com/${bucket.name}/${gstCertificateImage.originalname}`,
+    //     // licenseimage: req.body.GSTCertificateImage,
+    //     // gstimage: req.body.DrugLicenseImage,
+    //     // licenseimage: req.files[0].destination + '/' + req.files[0].filename,
+    //     // gstimage: req.files[1].destination + '/' + req.files[1].filename,
+    //     }
+
+    //     console.log("newdata>>>>>>>>>>>:",newData);
+
+    //     const retailer = new Retailer(newData);
+    //     const retailer_data = await retailer.save();
+    //     // console.log(retailer_data);
+    //   });
+
+    //   drugLicenseBlobStream.end(drugLicenseImage.buffer);
+    // });
+
+    // gstCertificateBlobStream.end(gstCertificateImage.buffer);
+
+    // resp.send({ status: true, message: "Retailer signup successfull" });
+
+    // ............................................................................................
+
+    const tempPath = 'tempfile.jpg';
+    fs.writeFileSync(tempPath, Buffer.from(gstCertificateImage.buffer));
+    const imagePath = `${Date.now()}.png`;
+    bucket.upload(tempPath, {
+      destination: `RetailerGSTCertificateImage/${imagePath}`,
+      metadata: {
+        contentType: 'image/png',
+        metadata: {
+          firebaseStorageDownloadToken: uuidv4()
+        }
+      }
+    }, async (err, file) => {
+      if (err) {
+        return resp.status(500).send({ status: false, message: "Internal Server Error" });
+      }
+      const [url] = await file.getSignedUrl({
+        action: 'read',
+        expires: '01-01-3000',
+      });
+      req.body.gstImageURL = url
+
+      fs.writeFileSync(tempPath, Buffer.from(drugLicenseImage.buffer));
+      const imagePath = `${Date.now()}.png`;
+      bucket.upload(tempPath, {
+        destination: `RetailerDrugLicenseImage/${imagePath}`,
+        metadata: {
+          contentType: 'image/png',
+          metadata: {
+            firebaseStorageDownloadToken: uuidv4()
+          }
+        }
+      }, async (err, file) => {
+        if (err) {
+          return resp.status(500).send({ status: false, message: "Internal Server Error" });
+        }
+        const [url] = await file.getSignedUrl({
+          action: 'read',
+          expires: '01-01-3000',
+        });
+        req.body.drugImageURL = url
+
+        const {
+          typeOfBusiness,
+          businessName,
+          ownerName,
+          businessAddress,
+          pincode,
+          city,
+          area,
+          phone,
+          password,
+          email,
+          pharmacistName,
+          licenseNumber,
+          gstInNumber,
+          panNumber,
+          gstImageURL,
+          drugImageURL
+        } = req.body;
+
+        const newData = {
+          businesstype: typeOfBusiness,
           businessname: businessName,
           ownername: ownerName,
           address: businessAddress,
@@ -155,33 +262,34 @@ module.exports.retailer_register = async (req, resp) => {
           phonenumber: phone,
           password: password,
           email: email,
-          pharname:  pharmacistName,
+          pharname: pharmacistName,
           licenseno: licenseNumber,
-          gstno:  gstInNumber,
-          panno:  panNumber,
-          licenseimage: `https://storage.googleapis.com/${bucket.name}/${drugLicenseImage.originalname}`,
-          gstimage: `https://storage.googleapis.com/${bucket.name}/${gstCertificateImage.originalname}`,
-          // licenseimage: req.body.GSTCertificateImage,
-          // gstimage: req.body.DrugLicenseImage,
-          // licenseimage: req.files[0].destination + '/' + req.files[0].filename,
-          // gstimage: req.files[1].destination + '/' + req.files[1].filename,
-          }
-    
-          console.log("newdata>>>>>>>>>>>:",newData);
-    
-          const retailer = new Retailer(newData);
-          const retailer_data = await retailer.save();
-          // console.log(retailer_data);
-        });
-    
-        drugLicenseBlobStream.end(drugLicenseImage.buffer);
-      });
-    
-      gstCertificateBlobStream.end(gstCertificateImage.buffer);
-    
-      resp.send({ status: true, message: "Retailer signup successfull" });
-    
-  }catch(err){
+          gstno: gstInNumber,
+          panno: panNumber,
+          licenseimage: drugImageURL,
+          gstimage: gstImageURL,
+        }
+
+        const retailer = new Retailer(newData);
+        const retailer_data = await retailer.save();
+
+        fs.unlinkSync(tempPath);
+        return resp.status(200).json({
+          status: true,
+          message: 'Retailer signup successfully',
+        })
+
+      })
+    })
+
+
+
+
+
+
+
+
+  } catch (err) {
     console.log(err);
     resp.status(500).send({ status: false, message: "Internal Server Error" });
   }
@@ -239,7 +347,7 @@ module.exports.retailer_profile = async (req, res) => {
 };
 
 module.exports.retailer_home = async (req, res) => {
-   try {
+  try {
     var bannerdata;
     var categorydata;
     var productdata = [];
@@ -260,17 +368,17 @@ module.exports.retailer_home = async (req, res) => {
     var retailer = await Retailer.findOne({ _id: req.user._id });
     var retailercity = retailer.city;
     var distributor = await Distributor.find({ city: retailercity });
-     if(!distributor || distributor.length ==0) return res.send({status:false , message : "no distributor found for the city"}) 
+    if (!distributor || distributor.length == 0) return res.send({ status: false, message: "no distributor found for the city" })
     var distributor_id = [];
     distributor.map((id) => {
       distributor_id.push(id._id.toString());
     });
 
     var pro = await Product.find();
-     if(!pro) return res.status({status:false , message : "please add product"})
-     console.log(pro)
+    if (!pro) return res.status({ status: false, message: "please add product" })
+    console.log(pro)
     pro.map((item) => {
-      if (item.distributors != null || item.distributors.length > 0 ) {
+      if (item.distributors != null || item.distributors.length > 0) {
         item.distributors.map((dis) => {
           console.log(dis)
           if (distributor_id.includes(dis.distributorId)) {
@@ -310,7 +418,7 @@ module.exports.category_product = async (req, res) => {
   });
 
   var pro = await Product.find({ category_id: req.body.category_id });
-  console.log('pro',pro)
+  console.log('pro', pro)
   pro.map((item) => {
     if (item.distributors.length > 0) {
       item.distributors.find((dis) => {
@@ -344,33 +452,33 @@ module.exports.get_product = async (req, res) => {
     distributor_id.push(id._id.toString());
   });
 
-var pro = await Product.find({});
+  var pro = await Product.find({});
 
-pro.map((item) => {
-  if (item.distributors.length > 0) {
-    var lowestPrice = Infinity; // Initialize with highest possible value
-    var lowestPriceDistributor = null;
+  pro.map((item) => {
+    if (item.distributors.length > 0) {
+      var lowestPrice = Infinity; // Initialize with highest possible value
+      var lowestPriceDistributor = null;
 
-    item.distributors.forEach((dis) => {
-      if (distributor_id.includes(dis.distributorId)) {
-        if (dis.price < lowestPrice) {
-          lowestPrice = dis.price;
-          lowestPriceDistributor = dis.distributorName;
+      item.distributors.forEach((dis) => {
+        if (distributor_id.includes(dis.distributorId)) {
+          if (dis.price < lowestPrice) {
+            lowestPrice = dis.price;
+            lowestPriceDistributor = dis.distributorName;
+          }
         }
-      }
-    });
+      });
 
-    if (lowestPriceDistributor) {
-      var obj = {
-        id: item._id,
-        name: item.title,
-        distributor_name: lowestPriceDistributor,
-        price: lowestPrice,
-      };
-      productdata.push(obj);
+      if (lowestPriceDistributor) {
+        var obj = {
+          id: item._id,
+          name: item.title,
+          distributor_name: lowestPriceDistributor,
+          price: lowestPrice,
+        };
+        productdata.push(obj);
+      }
     }
-  }
-});
+  });
 
   res.send({
     product: pro,
@@ -493,7 +601,7 @@ module.exports.add_to_cart = async (req, res) => {
 //         arr.push(obj);
 //         console.log("obj xoxoxoxo",obj);
 //       }
-      
+
 //       res.send({
 //         status: true,
 //         data: arr,
@@ -531,10 +639,10 @@ module.exports.get_cart = async (req, res) => {
           distributor_id: dis[0]?.distributorId,
           price: dis[0]?.price,
           quantity: item[i]?.quantity,
-          product:product
+          product: product
         };
         arr.push(obj);
-        console.log("object xoxoxo",obj); 
+        console.log("object xoxoxo", obj);
       }
       res.send({
         status: true,
@@ -649,9 +757,9 @@ module.exports.checkout = async (req, res) => {
     console.log("reqdata==========>", req.body);
     //test git commit
 
-    
 
-  
+
+
     await Cart.find({ user_id: req.user._id }).then(async (cartdata) => {
       var len = cartdata?.length;
 
@@ -726,7 +834,7 @@ module.exports.return_order = async (req, res) => {
   var id = req.body.order_id;
   var status = "returned";
 
-  try{
+  try {
     await Order.updateOne(
       { order_id: id, order_status: 3 },
       {
@@ -735,7 +843,7 @@ module.exports.return_order = async (req, res) => {
         return_status: 1,
         return_reason: req.body.reason,
         return_message: req.body.message,
-        return_image: req.file?req.file.location:"",
+        return_image: req.file ? req.file.location : "",
       }
     )
       .then((result) => {
@@ -756,10 +864,10 @@ module.exports.return_order = async (req, res) => {
         res.send({ status: false, message: err });
         console.log(err);
       });
-  }catch(err){
+  } catch (err) {
     console.log(err)
   }
- 
+
 };
 
 module.exports.order_details = async (req, res) => {
@@ -950,46 +1058,46 @@ module.exports.cancel_order_admin = async (req, res) => {
 
 
 exports.retailer_reject = async (req, res) => {
-  const retailerId = req.body.retailerId; 
+  const retailerId = req.body.retailerId;
   try {
     const retailer = await Retailer.findByIdAndUpdate(retailerId, { verify: false }, { new: true });
     if (!retailer) {
       // Check if the distributor was not found
       return res.status(404).json({ success: false, message: 'Retailer not found.' });
     }
-    res.status(200).json({ success: true, message: 'Retailer Rejected successfully.' ,data:retailer});
+    res.status(200).json({ success: true, message: 'Retailer Rejected successfully.', data: retailer });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Failed to rejected Retailer.' });
   }
 };
 
-module.exports.forGotPassword = async  (req,res,next)=>{
+module.exports.forGotPassword = async (req, res, next) => {
 
 
-  var user = await Retailer.findOne({email:req.body.email})
+  var user = await Retailer.findOne({ email: req.body.email })
 
-  
 
-   if(user){
+
+  if (user) {
     var val = Math.floor(1000 + Math.random() * 9000);
 
     nodemailer.sendEmail({
-      from:"admin@meddaily.in",
-      to:req.body.email,
-      subject:"OTP Verification",
-      text:"Hi your one time password is "+ val
-     })
+      from: "admin@meddaily.in",
+      to: req.body.email,
+      subject: "OTP Verification",
+      text: "Hi your one time password is " + val
+    })
 
-    res.send({status: true, otp: val})
-   }else{
+    res.send({ status: true, otp: val })
+  } else {
     res.send({
       status: false, message: "user is not valid, please enter valid email"
     })
-   }
-   
+  }
 
-   
+
+
 
 
 
@@ -1000,23 +1108,23 @@ module.exports.forGotPassword = async  (req,res,next)=>{
 
 }
 
-module.exports.updatePassword = async  (req,res,next)=>{
+module.exports.updatePassword = async (req, res, next) => {
 
 
-  var user = await Retailer.findOne({email:req.body.email})
+  var user = await Retailer.findOne({ email: req.body.email })
 
-  
 
-   if(user){
-  
-    var UpdateUser = await Retailer.findOneAndUpdate({email:req.body.email}, {$set:{password:req.body.password}})
 
-    res.send({status: true, message:"Password updated successfully"})
-   }else{
+  if (user) {
+
+    var UpdateUser = await Retailer.findOneAndUpdate({ email: req.body.email }, { $set: { password: req.body.password } })
+
+    res.send({ status: true, message: "Password updated successfully" })
+  } else {
     res.send({
       status: false, message: "user is not valid, please enter valid email"
     })
-   }
+  }
 
 
 }

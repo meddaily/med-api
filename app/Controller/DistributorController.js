@@ -57,7 +57,7 @@ module.exports.distributor_register = async (req, resp) => {
         console.log("==========================>>>>>>>>>>>>", req.files);
         console.log(retailer);
         const retailer_data = await retailer.save();
-        // console.log(retailer_data);
+        console.log(retailer_data);
         resp.send({ status: true, message: "Distributor signup successfull" });
       }
     }
