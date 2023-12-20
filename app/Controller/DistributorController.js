@@ -3,7 +3,7 @@ const Retailer = require("../Models/Retailer");
 const Payout = require("../Models/payout");
 const mongodb = require("mongodb");
 const Product = require("../Models/Product");
-
+const { bucket } = require("../../firebase/firebase");
 const generateUsertoken = require("../Common/common.js");
 const fs = require("fs");
 require("dotenv").config();
@@ -11,18 +11,23 @@ const token = require("../Models/token");
 const Order = require("../Models/Order");
 // let easyinvoice = require("easyinvoice");
 const Upload = require("../Middleware/upload");
+const { v4: uuidv4 } = require('uuid');
+
 
 // login function
 module.exports.distributor_login = async (req, resp) => {
   // create jwt token
-  console.log(req.body);
-  const { phone, password } = req.body;
-  await Distributor.findOne({ phonenumber: phone, password: password }).then(
+  const { email, password } = req.body;
+  console.log(req.body,"LOGIN");
+  await Distributor.findOne({ email: email, password: password }).then(
     async (result) => {
       console.log(result);
       if (result != null) {
+
         const jwt = generateUsertoken(result);
+
         let saveToken = new token({ token: jwt });
+
         await saveToken.save();
         resp.json({
           status: true,
@@ -48,17 +53,141 @@ module.exports.distributor_register = async (req, resp) => {
         });
       } else {
         var data = req.body;
-        console.log("file location", req.files["image1"][0].location);
-        data["gst_file"] = req.files["image1"][0].location;
-        data["image"] = req.files["image2"][0].location;
-        console.log(data);
+        console.log("FILE", req.files);
 
-        const retailer = new Distributor(data);
-        console.log("==========================>>>>>>>>>>>>", req.files);
-        console.log(retailer);
-        const retailer_data = await retailer.save();
-        console.log(retailer_data);
-        resp.send({ status: true, message: "Distributor signup successfull" });
+        const image1 = req.files.find(
+          (file) => file.fieldname === "image1"
+        );
+        const image2 = req.files.find(
+          (file) => file.fieldname === "image2"
+        );
+
+        // console.log('data',data)
+        if (!image1 || !image2) {
+          return resp.status(400).json({
+            message:
+              "Both RetailerGSTCertificateImage and RetailerDrugLicenseImage are required",
+          });
+        }
+
+
+        // data["gst_file"] = req.files["image1"][0].location;
+        // data["image"] = req.files["image2"][0].location;
+
+        // console.log(data);
+
+        // const retailer = new Distributor(data);
+        // console.log("==========================>>>>>>>>>>>>", req.files);
+        // console.log(retailer);
+
+        const tempPath = 'tempfile.png';
+        fs.writeFileSync(tempPath, Buffer.from(image1.buffer));
+        const imagePath = `${Date.now()}.png`;
+        bucket.upload(tempPath, {
+          destination: `GSTCertificateImage/${imagePath}`,
+          metadata: {
+            contentType: 'image/png',
+            metadata: {
+              firebaseStorageDownloadToken: uuidv4()
+            }
+          }
+        }, async (err, file) => {
+          if (err) {
+            console.log(err)
+            return resp.status(500).send({ status: false, message: "Internal Server Error" });
+          }
+          const [url] = await file.getSignedUrl({
+            action: 'read',
+            expires: '01-01-3000',
+          });
+          console.log(url)
+          req.body.gstImageURL = url
+
+          fs.writeFileSync(tempPath, Buffer.from(image2.buffer));
+          const imagePath = `${Date.now()}.png`;
+          bucket.upload(tempPath, {
+            destination: `DrugLicenseImage/${imagePath}`,
+            metadata: {
+              contentType: 'image/png',
+              metadata: {
+                firebaseStorageDownloadToken: uuidv4()
+              }
+            }
+          }, async (err, file) => {
+            if (err) {
+              console.log(err);
+              return resp.status(500).send({ status: false, message: "Internal Server Error" });
+            }
+            const [url] = await file.getSignedUrl({
+              action: 'read',
+              expires: '01-01-3000',
+            });
+            console.log(url)
+            req.body.drugImageURL = url
+
+            const {
+              firstname,
+              lastname,
+              pincode,
+              phonenumber,
+              city,
+              area,
+              state,
+              distributorcode,
+              gstNumber,
+              bankName,
+              distributortype,
+              benificiaryName,
+              accountNumber,
+              gstImageURL,
+              drugImageURL,
+              email,
+              password,
+              ifsc,
+              upiId,
+              status,
+              date,
+            } = req.body;
+
+            const newData = {
+              firstname: firstname,
+              lastname: lastname,
+              pincode: pincode,
+              city: city,
+              area: area,
+              state: state,
+              password:password,
+              distributorcode: distributorcode,
+              distributortype:distributortype,
+              gst_number: gstNumber,
+              email: email,
+              phonenumber: phonenumber,
+              bank_name: bankName,
+              benificiary_name: benificiaryName,
+              account_number: accountNumber,
+              gst_file:gstImageURL,
+              image:drugImageURL,
+              ifsc_code: ifsc,
+              upiId: upiId,
+              status: status,
+              date: date,
+            }
+
+            const distributer = new Distributor(newData);
+            const distributer_data = await distributer.save();
+            fs.unlinkSync(tempPath);
+            return resp.status(200).json({
+              status: true,
+              message: 'Retailer signup successfully',
+              data: distributer_data
+            })
+
+          })
+        })
+        // const retailer_data = await retailer.save();
+        // console.log(retailer_data);
+
+        // resp.send({ status: true, message: "Distributor signup successfull" });
       }
     }
   );
@@ -781,14 +910,14 @@ module.exports.distributor_get_product_retailer = async (req, res) => {
 };
 
 exports.distributor_reject = async (req, res) => {
-  const distributorId = req.body.distributorId; 
+  const distributorId = req.body.distributorId;
   try {
     const distributor = await Distributor.findByIdAndUpdate(distributorId, { verify: false }, { new: true });
     if (!distributor) {
       // Check if the distributor was not found
       return res.status(404).json({ success: false, message: 'Distributor not found.' });
     }
-    res.status(200).json({ success: true, message: 'Distributor Rejected successfully.' ,data:distributor});
+    res.status(200).json({ success: true, message: 'Distributor Rejected successfully.', data: distributor });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Failed to reject distributor.' });
