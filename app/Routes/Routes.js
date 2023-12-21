@@ -51,7 +51,7 @@ module.exports = (route) => {
   route.post(
     "/retailer_update",
     auth,
-    userimage.upload.array("image"),
+    // userimage.upload.array("image"),
     RetailerController.retailer_update
   );
   route.delete("/retailer_delete", auth, RetailerController.retailer_delete);
@@ -107,7 +107,7 @@ module.exports = (route) => {
   // checkout
   route.get("/my_order", auth, RetailerController.my_order);
   route.get("/order_details", auth, RetailerController.order_details);
-  route.post("/checkout",  RetailerController.checkout);
+  route.post("/checkout", auth,  RetailerController.checkout);
   route.post(
     "/return_order",
     auth,

@@ -17,9 +17,9 @@ const { v4: uuidv4 } = require('uuid');
 // login function
 module.exports.distributor_login = async (req, resp) => {
   // create jwt token
-  const { email, password } = req.body;
+  const { phone, password } = req.body;
   console.log(req.body,"LOGIN");
-  await Distributor.findOne({ email: email, password: password }).then(
+  await Distributor.findOne({ phonenumber: phone, password: password }).then(
     async (result) => {
       console.log(result);
       if (result != null) {
@@ -351,7 +351,7 @@ module.exports.return_order_accept = async (req, res) => {
   var id = req.body.order_id;
   var status = "accepted";
   let getOrder = await Order.findOne({ order_id: id });
-  if (getOrder.return_status == 2) {
+  if (getOrder?.return_status == 2) {
     return res.send({ status: false, message: "Already accepted" });
   }
   await Order.updateOne({ order_id: id }, { return_status: 2 }, { new: true })
@@ -484,10 +484,11 @@ module.exports.my_inventory = async (req, res) => {
 const XLSX = require("xlsx");
 const { mkdtemp } = require("fs").promises;
 const { join } = require("path");
+
 module.exports.getDemofile = async (req, res) => {
   try {
     const distributorId = req.query.id;
-    console.log(distributorId);
+    console.log("distributorId>>>>>>>>>>>>",distributorId);
 
     Product.aggregate([
       { $match: { "distributors.distributorId": distributorId } },
@@ -572,6 +573,7 @@ module.exports.getDemofile = async (req, res) => {
     res.send({ status: true, message: err.message });
   }
 };
+
 module.exports.bulkUpdate = async (req, res) => {
   try {
     filePath = req.file.path;

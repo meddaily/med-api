@@ -8,9 +8,6 @@ module.exports = function generateUsertoken(id){
     return jwt.sign(
          { user_id: id },
          process.env.JWT_KEY,
-         {
-           expiresIn: "2h",
-         }
        );
  }
 
@@ -26,7 +23,7 @@ module.exports.senddataResponse = function senddataResponse(resp,data,status,msg
 }
 
 
-// upload  single image 
+// upload  single image ````` 
 module.exports.uploadsingleImage = function uploadimage(req){
 
   var image;

@@ -48,7 +48,7 @@ module.exports.retailer_login = async (req, resp) => {
 // get user details using token
 module.exports.retailer_register = async (req, resp) => {
   try {
-    
+
     const user = await Retailer.findOne({ phonenumber: req.body.phone })
 
     if (user) {
@@ -202,7 +202,8 @@ module.exports.retailer_register = async (req, resp) => {
           firebaseStorageDownloadToken: uuidv4()
         }
       }
-    }, async (err, file) => {
+    },
+     async (err, file) => {
       if (err) {
         return resp.status(500).send({ status: false, message: "Internal Server Error" });
       }
@@ -579,65 +580,29 @@ module.exports.add_to_cart = async (req, res) => {
   });
 };
 
-// module.exports.get_cart = async (req, res) => {
-//   var cart = await Cart.find({ user_id: req.user._id })
-//     .then(async (item) => {
-//       console.log("cart values xoxoxo", item)
-//       var arr = [];
-//       for (var i = 0; i < item.length; i++) {
-//         var product = await Product.findOne({ _id: item[i].product_id });
-//         var dis = product.distributors.filter(
-//           (pro) => pro.distributorId == item[0].distributor_id
-//         );
-//         var obj = {
-//           _id: item[i]._id,
-//           product_id: item[i].product_id,
-//           product_name: product.title,
-//           distributor_name: dis[0].distributorName,
-//           distributor_id: dis[0].distributorId,
-//           price: dis[0].price,
-//           quantity: item[i].quantity,
-//         };
-//         arr.push(obj);
-//         console.log("obj xoxoxoxo",obj);
-//       }
-
-//       res.send({
-//         status: true,
-//         data: arr,
-//         message: "cart data show successfull",
-//       });
-//     })
-//     .catch((err) => {
-//       res.send({
-//         status: false,
-//         message: err,
-//       });
-//     });
-// };
-
 module.exports.get_cart = async (req, res) => {
   Cart.find({ user_id: req.user._id })
     .then(async (item) => {
       console.log("cart values", item); // Log the fetched items
       var arr = [];
       for (var i = 0; i < item.length; i++) {
-        console.log("Entering ther loop");
+        // console.log("Entering ther loop");
         var product = await Product.findOne({ _id: item[i].product_id }).catch((err) => {
           console.error("Error fetching product:", err);
         });
-        console.log("Entering ther product", product);
+        // console.log("Entering ther product", item[i].product_id);
+        // console.log(">>>>>>>>>>>>product", product);
         var dis = product?.distributors.filter(
           (pro) => pro.distributorId == item[i].distributor_id
         );
-        console.log("distributer lol", dis);
+        console.log("distributer lol", item[i].distributor_id);
         var obj = {
           _id: item[i]?._id,
           product_id: item[i]?.product_id,
           product_name: product?.title,
-          distributor_name: dis[0]?.distributorName,
-          distributor_id: dis[0]?.distributorId,
-          price: dis[0]?.price,
+          distributor_name: dis[i]?.fristname,
+          distributor_id: dis[i]?.distributorId,
+          price: dis[i]?.price,
           quantity: item[i]?.quantity,
           product: product
         };
@@ -754,10 +719,6 @@ module.exports.checkout = async (req, res) => {
   try {
     let item = [];
     let distributorId;
-    console.log("reqdata==========>", req.body);
-    //test git commit
-
-
 
 
     await Cart.find({ user_id: req.user._id }).then(async (cartdata) => {
@@ -766,19 +727,18 @@ module.exports.checkout = async (req, res) => {
       distributorId = cartdata[0].distributor_id;
       for (var i = 0; i < len; i++) {
         var product = await Product.findOne({ _id: cartdata[i].product_id });
-        console.log("product", cartdata[0].quantity);
         product.distributors.forEach(async (e) => {
           if (e.distributorId == distributorId) {
-            console.log(e);
-            if (!parseInt(e.stock) > parseInt(cartdata[0].quantity)) {
+            if (!parseInt(e.stock) > parseInt(cartdata?.quantity)) {
               throw new Error("Not enough stock");
             }
           }
         });
+
         var price = product.distributors.filter(
           (pro) => pro.distributorId == cartdata[0].distributor_id
         );
-        console.log(cartdata[0]);
+
 
         var obje = {
           id: product._id,
@@ -793,9 +753,12 @@ module.exports.checkout = async (req, res) => {
       }
       await product.save();
     });
+ 
     var orderid =
       "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
-    console.log(orderid);
+
+    console.log(orderid, "ORDERID");
+
     var obj = {
       retailer_id: req.user._id,
       order_id: orderid,
@@ -813,6 +776,7 @@ module.exports.checkout = async (req, res) => {
         res.send({ status: true, message: err.message, data: null });
       });
   } catch (err) {
+    console.log(err);
     res.send({ status: true, message: err.message, data: null });
   }
 };
@@ -834,7 +798,32 @@ module.exports.return_order = async (req, res) => {
   var id = req.body.order_id;
   var status = "returned";
 
-  try {
+  const image = req.files.find(
+    (file) => file.fieldname === "image"
+  );
+
+  const tempPath = 'tempfile.jpg';
+  fs.writeFileSync(tempPath, Buffer.from(image.buffer));
+  const imagePath = `${Date.now()}.png`;
+  bucket.upload(tempPath, {
+    destination: `ReturnOrder/${imagePath}`,
+    metadata: {
+      contentType: 'image/png',
+      metadata: {
+        firebaseStorageDownloadToken: uuidv4()
+      }
+    }
+  }, async (err, file) => {
+    if (err) {
+      return res.status(500).send({ status: false, message: "Internal Server Error" });
+    }
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: '01-01-3000',
+    });
+    req.body.url = url
+    console.log("IMAGEURL", url);
+    fs.unlinkSync(tempPath)
     await Order.updateOne(
       { order_id: id, order_status: 3 },
       {
@@ -843,7 +832,7 @@ module.exports.return_order = async (req, res) => {
         return_status: 1,
         return_reason: req.body.reason,
         return_message: req.body.message,
-        return_image: req.file ? req.file.location : "",
+        return_image: req.body.url,
       }
     )
       .then((result) => {
@@ -864,9 +853,7 @@ module.exports.return_order = async (req, res) => {
         res.send({ status: false, message: err });
         console.log(err);
       });
-  } catch (err) {
-    console.log(err)
-  }
+  })
 
 };
 
@@ -876,14 +863,16 @@ module.exports.order_details = async (req, res) => {
       .then(async (result) => {
         let totalAmount = 0;
         let getProductTax;
-
         result[0].products.map(async (e) => {
           totalAmount += result[0].price * e.quantity ?? 1;
         });
+        // console.log(">>>>>>>>>>>>>>",products);
         result = result[0];
         getProductTax = await Product.findOne({ _id: result.products[0].id });
         console.log(getProductTax);
+
         console.log("this is result", result.products[0].id);
+
         let distributerName = await Distributor.findOne({
           _id: result.distributor_id,
         });
@@ -891,13 +880,13 @@ module.exports.order_details = async (req, res) => {
           _id: result.retailer_id,
         });
         result._doc.distributor_name =
-          distributerName.firstname + " " + distributerName.lastname;
+          distributerName?.firstname + " " + distributerName?.lastname;
         result._doc.distributor_address =
-          distributerName.city +
+          distributerName?.city +
           " " +
-          distributerName.area +
+          distributerName?.area +
           " " +
-          distributerName.state;
+          distributerName?.state;
         result._doc.retailer_name = retailerName.ownername;
         result._doc.retailer_address = retailerName.address;
         result._doc.item_total = totalAmount;

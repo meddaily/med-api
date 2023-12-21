@@ -27,16 +27,21 @@ const uploadToS3 = (req, res, next) => {
         cb(null, Date.now().toString() + "_" + file.originalname);
       },
     }),
+    // storage: multer.diskStorage({})
   }).single("image");
-  upload(req, res, (error) => {
-    if (error) {
-      console.error("Error uploading file", error);
-      return res
-        .status(500)
-        .json({ error: "Error uploading file" + "message: " + error.message });
-    }
-    next();
-  });
+  console.log(">>>>frist", req.body);
+  return next();
+  // upload(req, res, (error) => {
+  //   if (error) {
+  //     console.error("Error uploading file", error);
+  //     return res
+  //       .status(500)
+  //       .json({ error: "Error uploading file" + "message: " + error.message });
+  //   }
+  //   console.log(">>>>third", req.body);
+
+  //   return next();
+  // });
 };
 const uploadToS3multiple = (req, res, next) => {
   const upload = multer({

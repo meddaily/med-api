@@ -86,17 +86,19 @@ module.exports.all_order = async (req, res) => {
             _id: e.retailer_id,
           });
           e._doc.distributor_name =
-            distributerName.firstname + " " + distributerName.lastname;
-          e._doc.retailer_name = retailerName.ownername;
+            distributerName?.firstname + " " + distributerName?.lastname;
+          e._doc.retailer_name = retailerName?.ownername;
           return e;
         })
       );
-      response.sendResponse(res, "success", mappedResults);
+      res.json({ status: "success", data: mappedResults });
     })
     .catch((err) => {
-      response.sendResponse(res, "fail", err);
+      res.status(500).json({ status: "fail", error: err.message });
     });
 };
+
+
 
 module.exports.order_status_change = async (req, res) => {
   const { order_id, status } = req.body;
@@ -307,6 +309,7 @@ module.exports.order_details = async (req, res) => {
 };
 
 const Invoice = require("../Models/invoice");
+const { retailer_detail } = require('./RetailerController.js');
 module.exports.get_invoice = async (req, res) => {
   try {
     let order_id = req.query.order_id;
