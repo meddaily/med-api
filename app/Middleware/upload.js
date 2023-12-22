@@ -20,16 +20,16 @@ const uploadToS3 = (req, res, next) => {
         cb(new Error("Invalid file format"));
       }
     },
-    storage: multerS3({
-      s3: s3Client,
-      bucket: "meddaily-files",
-      key: (req, file, cb) => {
-        cb(null, Date.now().toString() + "_" + file.originalname);
-      },
-    }),
-    // storage: multer.diskStorage({})
+    // storage: multerS3({
+    //   s3: s3Client,
+    //   bucket: "meddaily-files",
+    //   key: (req, file, cb) => {
+    //     cb(null, Date.now().toString() + "_" + file.originalname);
+    //   },
+    // }),
+    storage: multer.diskStorage({})
   }).single("image");
-  console.log(">>>>frist", req.body);
+  console.log(">>>>frist", req.files);
   return next();
   // upload(req, res, (error) => {
   //   if (error) {

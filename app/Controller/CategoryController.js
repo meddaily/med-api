@@ -10,9 +10,9 @@ const { v4: uuidv4 } = require('uuid');
 // insert category with admin panel
 module.exports.addcategory = async (req, resp) => {
   try {
-    console.log(">>>>>>>>>>>>>>>>>>", req.file);
+    // console.log(">>>>>>>>>>>>>>>>>>", req.files);
     const tempPath = 'tempfile.jpg';
-    fs.writeFileSync(tempPath, Buffer.from(req.file.buffer));
+    fs.writeFileSync(tempPath, Buffer.from(req.files[0].buffer));
     
     // Use a unique name for the image, for example, based on timestamp
     const imagePath = `${Date.now()}.png`;
