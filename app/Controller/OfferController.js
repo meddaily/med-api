@@ -122,6 +122,119 @@ module.exports.editoffer = async (req, resp) => {
 };
 
 // update banner using panel
+module.exports.updateoffer = async (req, resp) => {
+  try {
+    let obj;
+
+    // Check if a new image is provided
+    if (req.files && req.files.length > 0) {
+      // const tempPath = 'tempfile.jpg';
+      // fs.writeFileSync(tempPath, Buffer.from(req.files[0].buffer));
+
+      // const imagePath = `${Date.now()}.png`;
+
+      // Fetch the old offer data
+      const oldOffer = await offer.findOne({
+        _id: new mongodb.ObjectId(req.body.id),
+      });
+
+      // Delete the old image from Firebase Storage
+      if (oldOffer && oldOffer.image) {
+        const url = new URL(oldOffer.image);
+        const pathArray = url.pathname.split('/');
+        const oldImagePath = pathArray.slice(2).join('/');
+        // Check if the path was successfully extracted
+        if (oldImagePath) {
+          // Delete the old image from Firebase Storage
+          await bucket.file(oldImagePath).delete();
+        } else {
+          console.error('Failed to extract image path from oldOffer.image URL');
+          // Handle the error or log accordingly
+        }
+      }
+      const tempPath = 'tempfile.jpg';
+      fs.writeFileSync(tempPath, Buffer.from(req.files[0].buffer));
+
+      const imagePath = `${Date.now()}.png`;
+      // Upload the new image
+      bucket.upload(tempPath, {
+        destination: `addofferImage/${imagePath}`,
+        metadata: {
+          contentType: 'image/png',
+          metadata: {
+            firebaseStorageDownloadToken: uuidv4(),
+          },
+        },
+      }, async (err, file) => {
+        if (err) {
+          console.error(err);
+          return resp.status(500).send({ status: false, message: "Internal Server Error" });
+        }
+
+        const [url] = await file.getSignedUrl({
+          action: 'read',
+          expires: '01-01-3000',
+        });
+
+        obj = {
+          name: req.body.name,
+          image: url,
+          type: req.body.type,
+        };
+
+        // Update the offer data in MongoDB
+        const data = await offer.updateOne(
+          {
+            _id: new mongodb.ObjectId(req.body.id),
+          },
+          {
+            $set: obj,
+          }
+        );
+
+        if (data.acknowledged) {
+          return resp.send({
+            status: true,
+            message: "Offer updated successfully",
+            data: obj,
+          });
+        } else {
+          return resp.status(500).send({ status: false, message: "Failed to update offer" });
+        }
+      });
+
+    } else {
+      // Handle the case where no new image is provided
+      obj = { name: req.body.name, type: req.body.type };
+
+      // Update the offer data in MongoDB
+      const data = await offer.updateOne(
+        {
+          _id: new mongodb.ObjectId(req.body.id),
+        },
+        {
+          $set: obj,
+        }
+      );
+
+      if (data.acknowledged) {
+        return resp.send({
+          status: true,
+          message: "Offer updated successfully",
+          data: data,
+        });
+      } else {
+        return resp.status(500).send({ status: false, message: "Failed to update offer" });
+      }
+    }
+
+  } catch (error) {
+    console.error(error);
+    return resp.status(500).send({ status: false, message: "Internal Server Error" });
+  }
+};
+
+
 // module.exports.updateoffer = async (req, resp) => {
 //   var obj;
 //   if (req.file) {
@@ -156,91 +269,91 @@ module.exports.editoffer = async (req, resp) => {
 //       response.sendResponse(resp, false, err);
 //     });
 // };
-module.exports.updateoffer = async (req, resp) => {
-  try {
-    let obj;
+// module.exports.updateoffer = async (req, resp) => {
+//   try {
+//     let obj;
 
-    // Check if a new image is provided
-    if (req.files && req.files.length > 0) {
-      const tempPath = 'tempfile.jpg';
-      fs.writeFileSync(tempPath, Buffer.from(req.files[0].buffer));
+//     // Check if a new image is provided
+//     if (req.files && req.files.length > 0) {
+//       const tempPath = 'tempfile.jpg';
+//       fs.writeFileSync(tempPath, Buffer.from(req.files[0].buffer));
 
-      const imagePath = `${Date.now()}.png`;
+//       const imagePath = `${Date.now()}.png`;
 
-      bucket.upload(tempPath, {
-        destination: `addofferImage/${imagePath}`,
-        metadata: {
-          contentType: 'image/png',
-          metadata: {
-            firebaseStorageDownloadToken: uuidv4(),
-          },
-        },
-      }, async (err, file) => {
-        if (err) {
-          console.error(err);
-          return resp.status(500).send({ status: false, message: "Internal Server Error" });
-        }
+//       bucket.upload(tempPath, {
+//         destination: `addofferImage/${imagePath}`,
+//         metadata: {
+//           contentType: 'image/png',
+//           metadata: {
+//             firebaseStorageDownloadToken: uuidv4(),
+//           },
+//         },
+//       }, async (err, file) => {
+//         if (err) {
+//           console.error(err);
+//           return resp.status(500).send({ status: false, message: "Internal Server Error" });
+//         }
 
-        const [url] = await file.getSignedUrl({
-          action: 'read',
-          expires: '01-01-3000',
-        });
+//         const [url] = await file.getSignedUrl({
+//           action: 'read',
+//           expires: '01-01-3000',
+//         });
 
-        obj = {
-          name: req.body.name,
-          image: url,
-          type: req.body.type,
-        };
+//         obj = {
+//           name: req.body.name,
+//           image: url,
+//           type: req.body.type,
+//         };
 
-        const data = await offer.updateOne(
-          {
-            _id: new mongodb.ObjectId(req.body.id),
-          },
-          {
-            $set: obj,
-          }
-        );
+//         const data = await offer.updateOne(
+//           {
+//             _id: new mongodb.ObjectId(req.body.id),
+//           },
+//           {
+//             $set: obj,
+//           }
+//         );
 
-        if (data.acknowledged) {
-          return resp.send({
-            status: true,
-            message: "Offer updated successfully",
-            data: data,
-          });
-        } else {
-          return resp.status(500).send({ status: false, message: "Failed to update offer" });
-        }
-      });
+//         if (data.acknowledged) {
+//           return resp.send({
+//             status: true,
+//             message: "Offer updated successfully",
+//             data: data,
+//           });
+//         } else {
+//           return resp.status(500).send({ status: false, message: "Failed to update offer" });
+//         }
+//       });
 
-    } else {
-      // Handle the case where no new image is provided
-      obj = { name: req.body.name, type: req.body.type };
+//     } else {
+//       // Handle the case where no new image is provided
+//       obj = { name: req.body.name, type: req.body.type };
 
-      const data = await offer.updateOne(
-        {
-          _id: new mongodb.ObjectId(req.body.id),
-        },
-        {
-          $set: obj,
-        }
-      );
+//       const data = await offer.updateOne(
+//         {
+//           _id: new mongodb.ObjectId(req.body.id),
+//         },
+//         {
+//           $set: obj,
+//         }
+//       );
 
-      if (data.acknowledged) {
-        return resp.send({
-          status: true,
-          message: "Offer updated successfully",
-          data: data,
-        });
-      } else {
-        return resp.status(500).send({ status: false, message: "Failed to update offer" });
-      }
-    }
+//       if (data.acknowledged) {
+//         return resp.send({
+//           status: true,
+//           message: "Offer updated successfully",
+//           data: data,
+//         });
+//       } else {
+//         return resp.status(500).send({ status: false, message: "Failed to update offer" });
+//       }
+//     }
 
-  } catch (error) {
-    console.error(error);
-    return resp.status(500).send({ status: false, message: "Internal Server Error" });
-  }
-};
+//   } catch (error) {
+//     console.error(error);
+//     return resp.status(500).send({ status: false, message: "Internal Server Error" });
+//   }
+// };
 
 
 

@@ -248,7 +248,7 @@ module.exports.bulk_upload = async (req, res) => {
     const worksheet = workbook.Sheets[worksheetName];
 
     // Convert the worksheet to JSON format
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const jsonData = await XLSX.utils.sheet_to_json(worksheet);
     let findCategory = await category.findOne({ name: req.body.category });
     console.log(findCategory);
     let promiseArray = jsonData.map(async (e) => {

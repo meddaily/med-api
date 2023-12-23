@@ -590,19 +590,17 @@ module.exports.get_cart = async (req, res) => {
         var product = await Product.findOne({ _id: item[i].product_id }).catch((err) => {
           console.error("Error fetching product:", err);
         });
-        // console.log("Entering ther product", item[i].product_id);
-        // console.log(">>>>>>>>>>>>product", product);
         var dis = product?.distributors.filter(
           (pro) => pro.distributorId == item[i].distributor_id
         );
-        console.log("distributer lol", item[i].distributor_id);
+        
         var obj = {
           _id: item[i]?._id,
           product_id: item[i]?.product_id,
           product_name: product?.title,
           distributor_name: dis[i]?.fristname,
           distributor_id: dis[i]?.distributorId,
-          price: dis[i]?.price,
+          price: dis[0]?.price,
           quantity: item[i]?.quantity,
           product: product
         };
@@ -866,21 +864,19 @@ module.exports.order_details = async (req, res) => {
         result[0].products.map(async (e) => {
           totalAmount += result[0].price * e.quantity ?? 1;
         });
-        // console.log(">>>>>>>>>>>>>>",products);
         result = result[0];
         getProductTax = await Product.findOne({ _id: result.products[0].id });
         console.log(getProductTax);
 
-        console.log("this is result", result.products[0].id);
-
         let distributerName = await Distributor.findOne({
           _id: result.distributor_id,
-        });
+        }); 
         let retailerName = await Retailer.findOne({
           _id: result.retailer_id,
         });
         result._doc.distributor_name =
           distributerName?.firstname + " " + distributerName?.lastname;
+          console.log(">>?>?>",result._doc.distributor_name);
         result._doc.distributor_address =
           distributerName?.city +
           " " +
@@ -962,8 +958,8 @@ module.exports.get_return = async (req, res) => {
               _id: e.retailer_id,
             });
             e._doc.distributor_name =
-              distributerName.firstname + " " + distributerName.lastname;
-            e._doc.retailer_name = retailerName.ownername;
+              distributerName?.firstname + " " + distributerName?.lastname;
+            e._doc.retailer_name = retailerName?.ownername;
             return e;
           })
         );

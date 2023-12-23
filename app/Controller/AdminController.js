@@ -34,7 +34,7 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   if (email && password) {
-    Admin.findOne({ email: email }).then((check) => {
+  await  Admin.findOne({ email: email }).then((check) => {
       if (!check || check.length == 0) {
         response.sendResponse(
           res,
@@ -91,7 +91,7 @@ module.exports.all_order = async (req, res) => {
           return e;
         })
       );
-      res.json({ status: "success", data: mappedResults });
+      res.json({ status: "success", key:mappedResults.length,data: mappedResults });
     })
     .catch((err) => {
       res.status(500).json({ status: "fail", error: err.message });
@@ -118,8 +118,25 @@ module.exports.order_status_change = async (req, res) => {
 module.exports.order_detail = async (req, res) => {
   const { order_id } = req.body;
   await Order.findOne({ _id: order_id })
-    .then((item) => {
-      response.sendResponse(res, "success", item);
+    .then(async (item) => {
+      let distributerName = await Distributor.findOne({
+        _id: item.distributor_id,
+      });
+      console.log(distributerName,"DINAME");
+      let retailerName = await Retailer.findOne({
+        _id: item.retailer_id,
+      });
+      console.log(retailerName,"RINAME");
+
+      item.distributor_name =
+        distributerName?.firstname + " " + distributerName?.lastname;
+      item.retailer_name = retailerName?.ownername;
+      console.log("ITEM",item.retailer_name);
+   
+      response.sendResponse(res, {
+        status: "success",
+        data: { ...item._doc,  distributor_name: item.distributor_name,retailer_name: item.retailer_name },
+      });
     })
     .catch((err) => {
       response.sendResponse(res, "fail", err);
@@ -267,10 +284,12 @@ module.exports.order_details = async (req, res) => {
         result[0].products.map(async (e) => {
           totalAmount += result[0].price * e.quantity ?? 1;
         });
+
         result = result[0];
+
         getProductTax = await Product.findOne({ _id: result.products[0].id });
-        console.log(getProductTax);
-        console.log("this is result", result.products[0].id);
+
+
         let distributerName = await Distributor.findOne({
           _id: result.distributor_id,
         });

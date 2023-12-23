@@ -10,7 +10,6 @@ const { v4: uuidv4 } = require('uuid');
 // insert category with admin panel
 module.exports.addcategory = async (req, resp) => {
   try {
-    // console.log(">>>>>>>>>>>>>>>>>>", req.files);
     const tempPath = 'tempfile.jpg';
     fs.writeFileSync(tempPath, Buffer.from(req.files[0].buffer));
     
@@ -96,7 +95,6 @@ module.exports.updatecategory = async (req, resp) => {
   upload.single('image')(req, resp, function (error) {
     var obj;
     if (req.file) {
-
       var obj = { name: req.body.name, image: req.file.filename }
     }
     else {
