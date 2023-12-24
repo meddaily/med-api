@@ -131,11 +131,12 @@ module.exports.order_detail = async (req, res) => {
       item.distributor_name =
         distributerName?.firstname + " " + distributerName?.lastname;
       item.retailer_name = retailerName?.ownername;
+      item.billing_address = `${retailerName?.address} ${retailerName?.city}, ${retailerName?.area} ${retailerName?.state}, ${retailerName?.pincode}`;
       console.log("ITEM",item.retailer_name);
    
       response.sendResponse(res, {
         status: "success",
-        data: { ...item._doc,  distributor_name: item.distributor_name,retailer_name: item.retailer_name },
+        data: { ...item._doc,  distributor_name: item.distributor_name,retailer_name: item.retailer_name, billing_address: item.billing_address },
       });
     })
     .catch((err) => {
