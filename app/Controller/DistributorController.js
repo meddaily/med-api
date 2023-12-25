@@ -1,7 +1,7 @@
 const Distributor = require("../Models/Distributor");
 const Retailer = require("../Models/Retailer");
-const Payout = require("../Models/payout");
-const mongodb = require("mongodb");
+// const Payout = require("../Models/payout");
+// const mongodb = require("mongodb");
 const Product = require("../Models/Product");
 const { bucket } = require("../../firebase/firebase");
 const generateUsertoken = require("../Common/common.js");
@@ -10,8 +10,9 @@ require("dotenv").config();
 const token = require("../Models/token");
 const Order = require("../Models/Order");
 // let easyinvoice = require("easyinvoice");
-const Upload = require("../Middleware/upload");
+// const Upload = require("../Middleware/upload");
 const { v4: uuidv4 } = require('uuid');
+const PDFDocument = require('pdfkit');
 
 
 // login function
@@ -403,6 +404,7 @@ module.exports.create_payout = async (req, res) => {
     console.log(err);
   }
 };
+
 const mongoose = require("mongoose");
 module.exports.create_invoice = async (req, res) => {
   try {
@@ -686,53 +688,102 @@ const payout = require("../Models/payout");
 const { off } = require("process");
 module.exports.get_invoice = async (req, res) => {
   try {
-    let getOrder = await Order.findOne({ order_id: req.query.order_id });
+    const getOrder = await Order.findOne({ order_id: req.query.order_id });
+
     if (!getOrder || getOrder.length == 0) {
-      return res.send({ status: false, messsage: "Order not found" });
+      return res.send({ status: false, messsage: 'Order not found' });
     }
-    console.log(getOrder);
-    let getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
-    let getDistributor = await Distributor.findOne({
-      _id: getOrder.distributor_id,
+
+    const getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
+    const getDistributor = await Distributor.findOne({ _id: getOrder.distributor_id });
+
+    // Create a new PDF document
+    const doc = new PDFDocument();
+    
+    // Set response headers for PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=${getOrder.order_id}.pdf`);
+
+    doc.pipe(res);
+
+    console.log(">>>>>>>>>>>",getOrder);
+    doc.text(`Order ID: ${getOrder?.order_id}`);
+    doc.text(`Retailer: ${getRetailer?.businessname}`);
+    doc.text(`Distributor: ${getDistributor?.firstname} ${getDistributor?.lastname}`);
+    doc.text(`Price: ${getOrder?.price} `);
+    doc.text('\nProducts:');
+    getOrder.products.forEach(product => {
+      doc.text(`    Product ID: ${product?.id}`);
+      doc.text(`    Name: ${product?.name}`);
+      doc.text(`    Price: ${product?.price}`);
+      doc.text(`    Quantity: ${product?.quantity}`);
+      doc.text(`\n`)
     });
+    doc.text(`\n`)
 
-    var data = {
-      client: {
-        company: getRetailer.businessname,
-        address: getRetailer.address,
-        pin: getRetailer.pincode,
-        city: getRetailer.city,
-        gstno: getRetailer.gstno,
-      },
-      sender: {
-        distributorName: getDistributor.firstname + getDistributor.lastname,
-        area: getDistributor.area,
-        pin: getDistributor.pin,
-        city: getDistributor.city,
-        state: getDistributor.state,
-      },
-
-      images: {
-        logo: "https://meddaily.s3.ap-south-1.amazonaws.com/MEDDAILY-LOGO-inverted.png",
-      },
-      products: getOrder.products,
-      bottomNotice: "Kindly pay your invoice within 15 days.",
-      settings: {
-        currency: "INR",
-      },
-      translate: {},
-      customize: {
-        // "template": fs.readFileSync('template.html', 'base64') // Must be base64 encoded html
-      },
-    };
-    console.log(data);
-    res.send({ status: true, message: "data fetched ", data: data });
+    doc.text(`exp_date : ${getOrder?.exp_date}`)
+    doc.text(`bonus_quantity : ${getOrder?.bonus_quantity}`)
+    doc.text(`order_status : ${getOrder?.order_status}`)
+    doc.text(`return_status : ${getOrder?.return_status}`)
+    doc.text(`return_reason : ${getOrder?.return_reason}`)
+    doc.text(`return_message :${getOrder?.return_message}`)
+    doc.text(`payment_status :${getOrder?.payment_status}`)
+    doc.text(`payment_type :${getOrder?.payment_type}`)
+   
+    doc.end();
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.send({ status: false, message: err.message, data: null });
-
   }
 };
+// module.exports.get_invoice = async (req, res) => {
+//   try {
+//     let getOrder = await Order.findOne({ order_id: req.query.order_id });
+//     if (!getOrder || getOrder.length == 0) {
+//       return res.send({ status: false, messsage: "Order not found" });
+//     }
+//     console.log(getOrder);
+//     let getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
+//     let getDistributor = await Distributor.findOne({
+//       _id: getOrder.distributor_id,
+//     });
+
+//     var data = {
+//       client: {
+//         company: getRetailer.businessname,
+//         address: getRetailer.address,
+//         pin: getRetailer.pincode,
+//         city: getRetailer.city,
+//         gstno: getRetailer.gstno,
+//       },
+//       sender: {
+//         distributorName: getDistributor?.firstname + getDistributor?.lastname,
+//         area: getDistributor?.area,
+//         pin: getDistributor?.pin,
+//         city: getDistributor?.city,
+//         state: getDistributor?.state,
+//       },
+
+//       images: {
+//         logo: "https://meddaily.s3.ap-south-1.amazonaws.com/MEDDAILY-LOGO-inverted.png",
+//       },
+//       products: getOrder.products,
+//       bottomNotice: "Kindly pay your invoice within 15 days.",
+//       settings: {
+//         currency: "INR",
+//       },
+//       translate: {},
+//       customize: {
+//         // "template": fs.readFileSync('template.html', 'base64') // Must be base64 encoded html
+//       },
+//     };
+//     console.log(data);
+//     res.send({ status: true, message: "data fetched ", data: data });
+//   } catch (err) {
+//     console.log(err);
+//     res.send({ status: false, message: err.message, data: null });
+//   }
+// };
 
 module.exports.get_summary = async (req, res) => {
   try {
