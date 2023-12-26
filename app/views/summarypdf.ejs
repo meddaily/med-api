@@ -1,0 +1,195 @@
+<style>
+invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.invoice-table th, .invoice-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+.invoice-table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+}
+.total-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.total-table th, .total-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+.total-table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+}
+body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+    }
+
+    div {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+
+    table {
+        margin-top: 20px;
+    }
+
+    th, td {
+        /* border: 1px solid #ddd; */
+        /* padding: 8px; */
+        text-align: left;
+    }
+
+    th {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .invoice-table, .total-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .invoice-table th, .invoice-table td, .total-table th, .total-table td {
+        /* border: 1px solid #ddd; */
+        padding: 8px;
+        text-align: left;
+    }
+
+    .invoice-table th, .total-table th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .total-table {
+        margin-top: 20px;
+    }
+
+    h4 {
+        margin-top: 10px;
+    }
+
+    p {
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+<body>
+<div style="max-width: 800px; margin: 0 auto;">
+<div style="text-align: center; margin-bottom: 20px;">
+    <h3> Summary and Receipt</h3>
+</div>
+<table style="width: 100%;">
+    <tr>
+        <td>
+            <h4>Order ID</h4>
+        </td>
+        <td>
+            <p><%=getOrder?.order_id%></p>
+        </td>
+     
+    </tr>
+    <tr>
+        <td>
+            <h4>Customer Name</h4>
+        </td>
+        <td>
+            <p><%=getRetailer?. ownername%></p>
+        </td>
+        </tr>
+        <tr>
+        <td>
+            <h4>Customer Address</h4>
+        </td>
+        <td>
+            <p><%=getRetailer?.address%></p>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <h4>Distributor Name</h4>
+        </td>
+        <td>
+            <p><%=getDistributor?.firstname%></p>
+        </td>
+        </tr>
+        <tr>
+        <td>
+            <h4>Distributor Address</h4>
+            </td>
+            <td>
+            <p>  <%= getDistributor?.area %>, <%= getDistributor?.city %>, <%= getDistributor?.state %>, <%=
+                getDistributor?.pincode %></p>
+        </td>
+    </tr>
+  
+</table>
+<h4>Terms & Conditions</h4>
+<p>For your safety, please do not share these details with anyone over any medium.</p>
+<h4>Items Ordered</h4>
+<table class="invoice-table">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Total Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        <%var totalPrice=0; %>
+                        <% getOrder?.products?.forEach(function(item){ %>
+
+                            <tr>
+                                <td>
+                                    <%= item?.name %>
+                                </td>
+                                <td>
+                                    <%= item?.price %>
+                                </td>
+                              
+                                <td>
+                                    <%= item?.quantity %>
+                                </td>
+                                <td>
+                                    <%=(item?.price * item?.quantity)%>
+                                </td>
+                                <% totalPrice+=(item?.price * item?.quantity) %>
+                               
+                            </tr>
+                            <% }) %>
+                              
+                                <tr>
+                                    <td colspan="3">Item Total</td>
+                                   
+                                    <td colspan="2">
+                                        <%=totalPrice%>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3">Total Value</td>
+                                 
+                                    <td colspan="3">
+                                        <%=totalPrice%>
+                                    </td>
+                                </tr>
+                </tbody> 
+</table>

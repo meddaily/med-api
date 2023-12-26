@@ -13,13 +13,16 @@ const Order = require("../Models/Order");
 // const Upload = require("../Middleware/upload");
 const { v4: uuidv4 } = require('uuid');
 const PDFDocument = require('pdfkit');
+const pdf = require("html-pdf");
+const path = require("path");
+const ejs = require("ejs");
 
 
 // login function
 module.exports.distributor_login = async (req, resp) => {
   // create jwt token
   const { phone, password } = req.body;
-  console.log(req.body,"LOGIN");
+  console.log(req.body, "LOGIN");
   await Distributor.findOne({ phonenumber: phone, password: password }).then(
     async (result) => {
       console.log(result);
@@ -157,17 +160,17 @@ module.exports.distributor_register = async (req, resp) => {
               city: city,
               area: area,
               state: state,
-              password:password,
+              password: password,
               distributorcode: distributorcode,
-              distributortype:distributortype,
+              distributortype: distributortype,
               gst_number: gstNumber,
               email: email,
               phonenumber: phonenumber,
               bank_name: bankName,
               benificiary_name: benificiaryName,
               account_number: accountNumber,
-              gst_file:gstImageURL,
-              image:drugImageURL,
+              gst_file: gstImageURL,
+              image: drugImageURL,
               ifsc_code: ifsc,
               upiId: upiId,
               status: status,
@@ -490,7 +493,7 @@ const { join } = require("path");
 module.exports.getDemofile = async (req, res) => {
   try {
     const distributorId = req.query.id;
-    console.log("distributorId>>>>>>>>>>>>",distributorId);
+    console.log("distributorId>>>>>>>>>>>>", distributorId);
 
     Product.aggregate([
       { $match: { "distributors.distributorId": distributorId } },
@@ -686,6 +689,9 @@ module.exports.product_search = async (req, res) => {
 const { rm } = require("fs/promises");
 const payout = require("../Models/payout");
 const { off } = require("process");
+
+// const PDFDocument = require('pdfkit');
+
 module.exports.get_invoice = async (req, res) => {
   try {
     const getOrder = await Order.findOne({ order_id: req.query.order_id });
@@ -696,46 +702,127 @@ module.exports.get_invoice = async (req, res) => {
 
     const getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
     const getDistributor = await Distributor.findOne({ _id: getOrder.distributor_id });
+    // console.log("RTEIL",getRetailer);
+    // console.log("DIS",getDistributor);
+    // console.log("PRODUCT",getOrder);
 
-    // Create a new PDF document
-    const doc = new PDFDocument();
-    
-    // Set response headers for PDF
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=${getOrder.order_id}.pdf`);
+    // return res.render('pdf',{getRetailer,getDistributor,getOrder})
 
-    doc.pipe(res);
-
-    console.log(">>>>>>>>>>>",getOrder);
-    doc.text(`Order ID: ${getOrder?.order_id}`);
-    doc.text(`Retailer: ${getRetailer?.businessname}`);
-    doc.text(`Distributor: ${getDistributor?.firstname} ${getDistributor?.lastname}`);
-    doc.text(`Price: ${getOrder?.price} `);
-    doc.text('\nProducts:');
-    getOrder.products.forEach(product => {
-      doc.text(`    Product ID: ${product?.id}`);
-      doc.text(`    Name: ${product?.name}`);
-      doc.text(`    Price: ${product?.price}`);
-      doc.text(`    Quantity: ${product?.quantity}`);
-      doc.text(`\n`)
+    const html = await ejs.renderFile(
+      path.join(__dirname, "../views/pdf.ejs"),
+      { getRetailer,getDistributor,getOrder }
+    );
+    pdf.create(html).toBuffer((err, buffer) => {
+      const base64String = buffer.toString("base64");
+      return res.status(200).json({
+        status: "Success",
+        message: "pdf create successFully",
+        data: base64String,
+      });
     });
-    doc.text(`\n`)
+    // const doc = new PDFDocument();
 
-    doc.text(`exp_date : ${getOrder?.exp_date}`)
-    doc.text(`bonus_quantity : ${getOrder?.bonus_quantity}`)
-    doc.text(`order_status : ${getOrder?.order_status}`)
-    doc.text(`return_status : ${getOrder?.return_status}`)
-    doc.text(`return_reason : ${getOrder?.return_reason}`)
-    doc.text(`return_message :${getOrder?.return_message}`)
-    doc.text(`payment_status :${getOrder?.payment_status}`)
-    doc.text(`payment_type :${getOrder?.payment_type}`)
-   
-    doc.end();
+
+    // res.setHeader('Content-Type', 'application/pdf');
+    // res.setHeader('Content-Disposition', `attachment; filename=${getOrder.order_id}.pdf`);
+
+    // doc.pipe(res);
+
+    // doc.font('Helvetica-Bold');
+    // doc.fontSize(14);
+
+    // doc.text('Order Details', { align: 'center' });
+    // doc.text('Retailer Order : Summary and Receipt', { align: 'center', margin: [0, 10] });
+
+    // doc.fontSize(12);
+    // doc.text('Order ID:');
+    // doc.text(getOrder.order_id.toString());
+    // doc.text(`Retailer: ${getRetailer?.businessname}`);
+    // doc.text(`Distributor: ${getDistributor?.firstname} ${getDistributor?.lastname}`);
+    // doc.text('\n');
+
+ 
+
+    // await Promise.all(getOrder.products.map(async (product) => {
+    //   await new Promise(resolve => {
+    //     doc.text(`Product ID: ${product?.id}`);
+    //     doc.text(`Product Name: ${product.name}`);
+    //     doc.text(`Price: ${product.price}`);
+    //     doc.text(`Quantity: ${product.quantity}`);
+    //     doc.text('\n');
+    //     resolve();
+    //   });
+    // }));
+
+    //     doc.text(`exp_date : ${getOrder?.exp_date}`)
+    // doc.text(`bonus_quantity : ${getOrder?.bonus_quantity}`)
+    // doc.text(`order_status : ${getOrder?.order_status}`)
+    // doc.text(`return_status : ${getOrder?.return_status}`)
+    // doc.text(`return_reason : ${getOrder?.return_reason}`)
+    // doc.text(`return_message :${getOrder?.return_message}`)
+    // doc.text(`payment_status :${getOrder?.payment_status}`)
+    // doc.text(`payment_type :${getOrder?.payment_type}`)
+
+    // await new Promise(resolve => {
+    //   doc.end();
+    //   resolve();
+    // });
   } catch (err) {
     console.error(err);
     res.send({ status: false, message: err.message, data: null });
   }
 };
+
+// module.exports.get_invoice = async (req, res) => {
+//   try {
+//     const getOrder = await Order.findOne({ order_id: req.query.order_id });
+
+//     if (!getOrder || getOrder.length == 0) {
+//       return res.send({ status: false, messsage: 'Order not found' });
+//     }
+
+//     const getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
+//     const getDistributor = await Distributor.findOne({ _id: getOrder.distributor_id });
+
+//     // Create a new PDF document
+//     const doc = new PDFDocument();
+
+//     // Set response headers for PDF
+//     res.setHeader('Content-Type', 'application/pdf');
+//     res.setHeader('Content-Disposition', `attachment; filename=${getOrder.order_id}.pdf`);
+
+//     doc.pipe(res);
+
+//     console.log(">>>>>>>>>>>",getOrder);
+//     doc.text(`Order ID: ${getOrder?.order_id}`);
+//     doc.text(`Retailer: ${getRetailer?.businessname}`);
+//     doc.text(`Distributor: ${getDistributor?.firstname} ${getDistributor?.lastname}`);
+//     doc.text(`Price: ${getOrder?.price} `);
+//     doc.text('\nProducts:');
+//     getOrder.products.forEach(product => {
+//       doc.text(`    Product ID: ${product?.id}`);
+//       doc.text(`    Name: ${product?.name}`);
+//       doc.text(`    Price: ${product?.price}`);
+//       doc.text(`    Quantity: ${product?.quantity}`);
+//       doc.text(`\n`)
+//     });
+//     doc.text(`\n`)
+
+//     doc.text(`exp_date : ${getOrder?.exp_date}`)
+//     doc.text(`bonus_quantity : ${getOrder?.bonus_quantity}`)
+//     doc.text(`order_status : ${getOrder?.order_status}`)
+//     doc.text(`return_status : ${getOrder?.return_status}`)
+//     doc.text(`return_reason : ${getOrder?.return_reason}`)
+//     doc.text(`return_message :${getOrder?.return_message}`)
+//     doc.text(`payment_status :${getOrder?.payment_status}`)
+//     doc.text(`payment_type :${getOrder?.payment_type}`)
+
+//     doc.end();
+//   } catch (err) {
+//     console.error(err);
+//     res.send({ status: false, message: err.message, data: null });
+//   }
+// };
 // module.exports.get_invoice = async (req, res) => {
 //   try {
 //     let getOrder = await Order.findOne({ order_id: req.query.order_id });
@@ -796,38 +883,54 @@ module.exports.get_summary = async (req, res) => {
     let getDistributor = await Distributor.findOne({
       _id: getOrder.distributor_id,
     });
+    console.log("RE",getRetailer);
+    console.log("DIS",getDistributor);
 
-    var data = {
-      client: {
-        company: getRetailer.businessname,
-        address: getRetailer.address,
-        pin: getRetailer.pincode,
-        city: getRetailer.city,
-        gstno: getRetailer.gstno,
-      },
-      sender: {
-        distributorName: getDistributor.firstname + getDistributor.lastname,
-        area: getDistributor.area,
-        pin: getDistributor.pin,
-        city: getDistributor.city,
-        state: getDistributor.state,
-      },
+    const html = await ejs.renderFile(
+      path.join(__dirname, "../views/summarypdf.ejs"),
+      { getRetailer,getDistributor,getOrder }
+    );
+    pdf.create(html).toBuffer((err, buffer) => {
+      const base64String = buffer.toString("base64");
+      return res.status(200).json({
+        status: "Success",
+        message: "pdf create successFully",
+        data: base64String,
+      });
+    });
 
-      images: {
-        logo: "https://meddaily.s3.ap-south-1.amazonaws.com/MEDDAILY-LOGO-inverted.png",
-      },
-      products: getOrder.products,
-      bottomNotice: "Kindly pay your invoice within 15 days.",
-      settings: {
-        currency: "INR",
-      },
-      translate: {},
-      customize: {
-        // "template": fs.readFileSync('template.html', 'base64') // Must be base64 encoded html
-      },
-    };
-    console.log(data);
-    res.send({ status: true, message: "data fetched ", data: data });
+    // var data = {
+    //   client: {
+    //     company: getRetailer.businessname,
+    //     address: getRetailer.address,
+    //     pin: getRetailer.pincode,
+    //     city: getRetailer.city,
+    //     gstno: getRetailer.gstno,
+    //   },
+    //   sender: {
+    //     distributorName: getDistributor.firstname + getDistributor.lastname,
+    //     area: getDistributor.area,
+    //     pin: getDistributor.pin,
+    //     city: getDistributor.city,
+    //     state: getDistributor.state,
+    //   },
+
+    //   images: {
+    //     logo: "https://meddaily.s3.ap-south-1.amazonaws.com/MEDDAILY-LOGO-inverted.png",
+    //   },
+    //   products: getOrder.products,
+    //   bottomNotice: "Kindly pay your invoice within 15 days.",
+    //   settings: {
+    //     currency: "INR",
+    //   },
+    //   translate: {},
+    //   customize: {
+    //     // "template": fs.readFileSync('template.html', 'base64') // Must be base64 encoded html
+    //   },
+    // };
+    // console.log(data);
+    // return res.render('summarypdf',{getDistributor,getRetailer,getOrder})
+    // res.send({ status: true, message: "data fetched ", data: data });
   } catch (err) {
     console.log(err);
     res.send({ status: false, message: err.message, data: null });
@@ -963,17 +1066,29 @@ module.exports.distributor_get_product_retailer = async (req, res) => {
 };
 
 exports.distributor_reject = async (req, res) => {
+  console.log("???????????????????????????????????????");
   const distributorId = req.body.distributorId;
+  
   try {
-    const distributor = await Distributor.findByIdAndUpdate(distributorId, { verify: false }, { new: true });
+    // Find the distributor based on distributorId
+    const distributor = await Distributor.findOne({ _id: distributorId });
+
     if (!distributor) {
       // Check if the distributor was not found
       return res.status(404).json({ success: false, message: 'Distributor not found.' });
     }
+
+    // Update the distributor to set verify to false
+    distributor.verify = false;
+    await distributor.save();
+
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", distributor);
+
     res.status(200).json({ success: true, message: 'Distributor Rejected successfully.', data: distributor });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Failed to reject distributor.' });
   }
 };
+
 // <<<<<<------------------------------Mongo services ------------------------------------------->>>

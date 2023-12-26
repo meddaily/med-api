@@ -237,6 +237,7 @@ module.exports.retailer_register = async (req, resp) => {
           typeOfBusiness,
           businessName,
           ownerName,
+          state,
           businessAddress,
           pincode,
           city,
@@ -245,6 +246,7 @@ module.exports.retailer_register = async (req, resp) => {
           password,
           email,
           pharmacistName,
+          PharmacistPhoneNo,
           licenseNumber,
           gstInNumber,
           panNumber,
@@ -256,6 +258,7 @@ module.exports.retailer_register = async (req, resp) => {
           businesstype: typeOfBusiness,
           businessname: businessName,
           ownername: ownerName,
+          state:state,
           address: businessAddress,
           pincode: pincode,
           city: city,
@@ -264,6 +267,7 @@ module.exports.retailer_register = async (req, resp) => {
           password: password,
           email: email,
           pharname: pharmacistName,
+          pharphone:PharmacistPhoneNo,
           licenseno: licenseNumber,
           gstno: gstInNumber,
           panno: panNumber,
@@ -282,11 +286,6 @@ module.exports.retailer_register = async (req, resp) => {
 
       })
     })
-
-
-
-
-
 
 
 
@@ -725,6 +724,7 @@ module.exports.checkout = async (req, res) => {
       distributorId = cartdata[0].distributor_id;
       for (var i = 0; i < len; i++) {
         var product = await Product.findOne({ _id: cartdata[i].product_id });
+        // console.log(product)
         product.distributors.forEach(async (e) => {
           if (e.distributorId == distributorId) {
             if (!parseInt(e.stock) > parseInt(cartdata?.quantity)) {
@@ -743,6 +743,7 @@ module.exports.checkout = async (req, res) => {
           name: product.title,
           image: product.image,
           price: price[0].price,
+          tax: product.applicable_tax,
           batch_no: "",
           exp_date: "",
           quantity: cartdata[0].quantity,
@@ -886,8 +887,8 @@ module.exports.order_details = async (req, res) => {
         result._doc.retailer_name = retailerName.ownername;
         result._doc.retailer_address = retailerName.address;
         result._doc.item_total = totalAmount;
-        result._doc.Tax = (totalAmount * getProductTax.applicable_tax) / 100;
-        result._doc.applicable_tax = getProductTax.applicable_tax;
+        result._doc.Tax = (totalAmount * getProductTax?.applicable_tax) / 100;
+        result._doc.applicable_tax = getProductTax?.applicable_tax;
 
         result._doc.delivery_fee = 100;
         result._doc.order_total =
@@ -1044,18 +1045,27 @@ module.exports.cancel_order_admin = async (req, res) => {
 
 exports.retailer_reject = async (req, res) => {
   const retailerId = req.body.retailerId;
+
   try {
-    const retailer = await Retailer.findByIdAndUpdate(retailerId, { verify: false }, { new: true });
+    // Find the retailer based on retailerId
+    const retailer = await Retailer.findOne({ _id: retailerId });
+
     if (!retailer) {
-      // Check if the distributor was not found
+      // Check if the retailer was not found
       return res.status(404).json({ success: false, message: 'Retailer not found.' });
     }
+
+    // Update the retailer to set verify to false
+    retailer.verify = false;
+    await retailer.save();
+
     res.status(200).json({ success: true, message: 'Retailer Rejected successfully.', data: retailer });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Failed to rejected Retailer.' });
+    res.status(500).json({ success: false, message: 'Failed to reject Retailer.' });
   }
 };
+
 
 module.exports.forGotPassword = async (req, res, next) => {
 

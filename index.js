@@ -8,6 +8,10 @@ require("dotenv").config();
 const multer = require('multer');
 const upload = multer();
 const PORT = process.env.PORT || 443;
+const path = require("path");
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "app", "views"));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

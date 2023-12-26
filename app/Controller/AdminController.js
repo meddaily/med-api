@@ -252,8 +252,8 @@ module.exports.get_return_admin = async (req, res) => {
               _id: e.retailer_id,
             });
             e._doc.distributor_name =
-              distributerName.firstname + " " + distributerName.lastname;
-            e._doc.retailer_name = retailerName.ownername;
+              distributerName?.firstname + " " + distributerName?.lastname;
+            e._doc.retailer_name = retailerName?.ownername;
             return e;
           })
         );
@@ -298,17 +298,17 @@ module.exports.order_details = async (req, res) => {
           _id: result.retailer_id,
         });
         result._doc.distributor_name =
-          distributerName.firstname + " " + distributerName.lastname;
+          distributerName?.firstname + " " + distributerName?.lastname;
         result._doc.distributor_address =
-          distributerName.city +
+          distributerName?.city +
           " " +
-          distributerName.area +
+          distributerName?.area +
           " " +
-          distributerName.state;
-        result._doc.retailer_name = retailerName.ownername;
-        result._doc.retailer_address = retailerName.address;
+          distributerName?.state;
+        result._doc.retailer_name = retailerName?.ownername;
+        result._doc.retailer_address = retailerName?.address;
         result._doc.item_total = totalAmount;
-        result._doc.Tax = (totalAmount * getProductTax.applicable_tax) / 100;
+        result._doc.Tax = (totalAmount * getProductTax?.applicable_tax) / 100;
         result._doc.delivery_fee = 100;
         result._doc.order_total =
           result._doc.item_total + result._doc.Tax + result._doc.delivery_fee;

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>invoice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        h1 {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        h2 {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td,
+        th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .total {
+            font-weight: bold;
+        }
+
+        .invoice-container {
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .invoice-header {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .invoice-logo {
+            float: left;
+            width: 100px;
+            height: 100px;
+        }
+
+        .invoice-info {
+            float: right;
+            text-align: right;
+        }
+
+        .invoice-table {
+            margin-top: 20px;
+        }
+
+        .invoice-table th {
+            text-align: left;
+        }
+
+        .invoice-total {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+
+        .invoice-total-label {
+            float: left;
+        }
+
+        .invoice-total-value {
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <!-- <div class="invoice-logo">
+                <img src="https://b.zmtcdn.com/data/o2_assets/2f583d5c9e1c95887448b496b8f6b57d1582412718.png"
+                    alt="Zomato Logo">
+            </div> -->
+            <div class="invoice-info">
+                <h1>Tax Invoice</h1>
+                <!-- <p><b>Legal Entity Name:</b> BHARATBHAI MANJIBHAI GOYANI</p> -->
+                <!-- <p><b>Restaurant Name:</b> Shree Sainath Dosa</p> -->
+                <p>
+                    <b>Address:</b>
+                    <%= getDistributor?.area %>, <%= getDistributor?.city %>, <%= getDistributor?.state %>, <%=
+                                    getDistributor?.pincode %>
+                </p>
+                <p><b>GSTIN:</b>
+                    <%= getDistributor.gst_number %>
+                </p>
+                <p><b>Invoice No.:</b> 23JCTNLK0000448</p>
+                <p><b>Invoice Date:</b> 03/11/2023</p>
+            </div>
+        </div>
+        <div class="invoice-customer-info">
+            <h2>Customer Information</h2>
+            <p><b>Customer Name:</b>
+                <%= getRetailer?.ownername %>
+            </p>
+            <p><b>Delivery Address:</b>
+                <%= getRetailer?.address %>
+            </p>
+            <p><b>State name:</b>
+                <%= getRetailer?.state %>
+            </p>
+            <p><b>GSTIN:</b>
+                <%= getRetailer?.gstno %>
+            </p>
+        </div>
+        <div class="invoice-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Price</th>
+                        <th>Batch Number</th>
+                        <th>CGST</th>
+                        <th>CGST(INR)</th>
+                        <th>SGST</th>
+                        <th>SGST(INR)</th>
+                        <th>Quantity</th>
+                        <!-- <th>CGST</th>
+              <th>SGST (Rate)</th>
+              <th>SGST</th> -->
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <%var totalPrice=0; %>
+                        <% getOrder?.products?.forEach(function(item){ %>
+
+                            <tr>
+                                <td>
+                                    <%= item?.name %>
+                                </td>
+                                <td>
+                                    <%= item?.price %>
+                                </td>
+                                <td>
+                                    <%= item?.batch_no %>
+                                </td>
+                                <td><%= (item.tax/2) %>%</td>
+                                <td><%= (((item?.price * item?.quantity)/100)*(item.tax/2)) %></td>
+                                <td><%= (item.tax/2) %>%</td>
+                                <td><%= (((item?.price * item?.quantity)/100)*(item.tax/2)) %></td>
+                                <td>
+                                    <%= item?.quantity %>
+                                </td>
+                                <td>
+                                    <%=(item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2)%>
+                                </td>
+                                <% totalPrice+=(item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2) %>
+                                    <!-- <td>2.25</td>
+                  <td>2.5%</td>
+                  <td>2.25</td>
+                  <td>94.5</td> -->
+                            </tr>
+                            <% }) %>
+                                <!-- <tr>
+              <td>1 x Sada Dosa</td>
+              <td>65</td>
+              <td>0</td>
+              <td>65</td>
+              <td>2.5%</td>
+              <td>1.63</td>
+              <td>2.5%</td>
+              <td>1.63</td>
+              <td>68.26</td>
+            </tr> -->
+                                <tr>
+                                    <td colspan="3">Item Total</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <!-- <td colspan="3"></td> -->
+                                    <td colspan="3">
+                                        <%=totalPrice%>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3">Total Value</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <!-- <td colspan="3"></td> -->
+                                    <td colspan="3">
+                                        <%=totalPrice%>
+                                    </td>
+                                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="invoice-total">
+            <!-- <div class="invoice-total-label">
+                <b>Amount (In words):</b> One Hundred Sixty Two Rupees And Seventy Six Paisa Only
+            </div> -->
+            <!-- <div class="invoice-total-value">
+          INR 162.76
+        </div> -->
+        </div>
+        <div class="invoice-notes">
+            <p>
+                Amount INR <%= totalPrice%> settled through digital mode/payment received upon
+                delivery against Order ID: <%=getOrder.order_id%>
+            </p>
+            <!-- <p>Supply attracts reverse charge: No</p> -->
+        </div>
+        <div class="invoice-footer">
+            <!-- <p>
+                For ZOMATO LIMITED (FORMERLY KNOWN AS ZOMATO PRIVATE LIMITED AND ZOMATO
+                MEDIA PRIVATE LIMITED)
+            </p>
+            <p>Zomato PAN: AADCD4946L</p>
+            <p>Zomato CIN: L93030DL2010PLC198141</p>
+            <p>Zomato GST: 24AADCD4946L1ZG</p>
+            <p>Zomato FSSAI: 10019064001810</p> -->
+            <p>Authorised Signatory</p>
+        </div>
+    </div>
+</body>
+
+</html>
