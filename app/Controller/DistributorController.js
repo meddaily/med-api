@@ -581,7 +581,7 @@ module.exports.getDemofile = async (req, res) => {
 
 module.exports.bulkUpdate = async (req, res) => {
   try {
-    filePath = req.file.path;
+    filePath = req?.file?.path;
     console.log(req.file);
 
     // Load the workbook from the file
