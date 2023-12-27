@@ -205,7 +205,7 @@ module.exports.update_inventory = async (req, res) => {
     price: parseInt(price),
     stock: parseInt(stock),
   };
-  old_des.distributors.push(newDistributor);
+  old_des?.distributors?.push(newDistributor);
   // `doc` is the document _before_ `update` was applied
   let doc = await Product.findOneAndUpdate(
     { _id: productId },

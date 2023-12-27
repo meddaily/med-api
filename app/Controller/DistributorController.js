@@ -177,7 +177,7 @@ module.exports.distributor_register = async (req, resp) => {
               date: date,
             }
 
-            const distributer = new Distributor({...req.body,  gst_file: gstImageURL, image: drugImageURL});
+            const distributer = new Distributor({newData});
             const distributer_data = await distributer.save();
             fs.unlinkSync(tempPath);
             return resp.status(200).json({

@@ -498,7 +498,7 @@ module.exports.product_details = async (req, res) => {
   });
   console.log(distributor_id);
   var pro = await Product.findOne({ _id: req.body.id });
-  if (pro.distributors.length > 0) {
+  if (pro?.distributors.length > 0) {
     pro.distributors.map((dis) => {
       if (distributor_id.includes(dis.distributorId)) {
         distributor_data.push(dis);
@@ -725,7 +725,7 @@ module.exports.checkout = async (req, res) => {
       for (var i = 0; i < len; i++) {
         var product = await Product.findOne({ _id: cartdata[i].product_id });
         // console.log(product)
-        product.distributors.forEach(async (e) => {
+        product?.distributors?.forEach(async (e) => {
           if (e.distributorId == distributorId) {
             if (!parseInt(e.stock) > parseInt(cartdata?.quantity)) {
               throw new Error("Not enough stock");
@@ -733,7 +733,7 @@ module.exports.checkout = async (req, res) => {
           }
         });
 
-        var price = product.distributors.filter(
+        var price = product?.distributors?.filter(
           (pro) => pro.distributorId == cartdata[0].distributor_id
         );
 
