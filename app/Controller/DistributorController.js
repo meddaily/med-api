@@ -177,7 +177,7 @@ module.exports.distributor_register = async (req, resp) => {
               date: date,
             }
 
-            const distributer = new Distributor(newData);
+            const distributer = new Distributor({...req.body,  gst_file: gstImageURL, image: drugImageURL});
             const distributer_data = await distributer.save();
             fs.unlinkSync(tempPath);
             return resp.status(200).json({
@@ -1066,8 +1066,8 @@ module.exports.distributor_get_product_retailer = async (req, res) => {
 };
 
 exports.distributor_reject = async (req, res) => {
-  console.log("???????????????????????????????????????");
-  const distributorId = req.body.distributorId;
+  const distributorId = req.body.id;
+  console.log("???????????????????????????????????????",distributorId);
   
   try {
     // Find the distributor based on distributorId

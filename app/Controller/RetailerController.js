@@ -1044,7 +1044,7 @@ module.exports.cancel_order_admin = async (req, res) => {
 
 
 exports.retailer_reject = async (req, res) => {
-  const retailerId = req.body.retailerId;
+  const retailerId = req.body.id;
 
   try {
     // Find the retailer based on retailerId

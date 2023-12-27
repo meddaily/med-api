@@ -73,29 +73,57 @@ exports.login = async (req, res) => {
   }
 };
 
+// module.exports.all_order = async (req, res) => {
+//   await Order.find({ return_status: 0 })
+//     .sort({ createdAt: -1 })
+//     .then(async (item) => {
+//       const mappedResults = await Promise.all(
+//         item.map(async (e) => {
+//           let distributerName = await Distributor.findOne({
+//             _id: e.distributor_id,
+//           });
+//           let retailerName = await Retailer.findOne({
+//             _id: e.retailer_id,
+//           });
+//           console.log("??????????????????????????distributerName???????????????????????????????", distributerName?.firstname);
+//           e._doc.distributor_name =
+//           distributerName?.firstname + " " + distributerName?.lastname;
+//           e._doc.retailer_name = retailerName?.ownername;
+//           return e;
+//         })
+//       );
+//       res.json({ status: "success", key:mappedResults.length,data: mappedResults });
+//     })
+//     .catch((err) => {
+//       res.status(500).json({ status: "fail", error: err.message });
+//     });
+// };
 module.exports.all_order = async (req, res) => {
-  await Order.find({ return_status: 0 })
-    .sort({ createdAt: -1 })
-    .then(async (item) => {
-      const mappedResults = await Promise.all(
-        item.map(async (e) => {
-          let distributerName = await Distributor.findOne({
-            _id: e.distributor_id,
-          });
-          let retailerName = await Retailer.findOne({
-            _id: e.retailer_id,
-          });
-          e._doc.distributor_name =
-            distributerName?.firstname + " " + distributerName?.lastname;
-          e._doc.retailer_name = retailerName?.ownername;
-          return e;
-        })
-      );
-      res.json({ status: "success", key:mappedResults.length,data: mappedResults });
-    })
-    .catch((err) => {
-      res.status(500).json({ status: "fail", error: err.message });
-    });
+  try {
+    const orders = await Order.find({ return_status: 0 }).sort({ createdAt: -1 });
+
+    const mappedResults = await Promise.all(
+      orders.map(async (e) => {
+        let distributerName = await Distributor.findOne({ _id: e.distributor_id });
+        let retailerName = await Retailer.findOne({ _id: e.retailer_id });
+
+        console.log("??????????????????????????distributerName???????????????????????????????", distributerName);
+
+        // Check if distributerName is defined before accessing its properties
+      
+          e._doc.distributor_name = distributerName.firstname 
+          
+     
+
+        e._doc.retailer_name = retailerName?.ownername;
+        return e;
+      })
+    );
+
+    res.json({ status: "success", key: mappedResults.length, data: mappedResults });
+  } catch (err) {
+    res.status(500).json({ status: "fail", error: err.message });
+  }
 };
 
 
