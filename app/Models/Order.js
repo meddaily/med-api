@@ -6,7 +6,17 @@ var OrderSchema = mongoose.Schema(
     distributor_id: { type: mongoose.Schema.Types.ObjectId },
     retailer_id: { type: mongoose.Schema.Types.ObjectId },
     price: { type: Number, default: 0 },
-    products: { type: Array, default: [] },
+    products: [
+      {
+        id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+        name: String,
+        image: String,
+        price: Number,
+        batch_no: String,
+        exp_date: String,
+        quantity: Number
+      }
+    ],
     batch_no: { type: String, default: "" },
     exp_date: { type: String, default: "" },
     bonus_quantity: { type: Number, default: 0 },

@@ -535,12 +535,14 @@ module.exports.add_to_cart = async (req, res) => {
           status: true,
           message: "Item already in cart",
         });
-      } else if (cartdata.distributor_id != req.body.distributor_id) {
+      }
+       else if (cartdata.distributor_id != req.body.distributor_id) {
         return res.send({
           status: false,
           message: "You can order one distributor at one time",
         });
-      } else {
+      } 
+      else {
         var obj = {
           user_id: req.user._id,
           product_id: req.body.product_id,
@@ -580,6 +582,7 @@ module.exports.add_to_cart = async (req, res) => {
 };
 
 module.exports.get_cart = async (req, res) => {
+  console.log("ID>>>>>>>>>>>>>>>>>>>",req.user._id);
   Cart.find({ user_id: req.user._id })
     .then(async (item) => {
       console.log("cart values", item); // Log the fetched items
@@ -589,17 +592,18 @@ module.exports.get_cart = async (req, res) => {
         var product = await Product.findOne({ _id: item[i].product_id }).catch((err) => {
           console.error("Error fetching product:", err);
         });
-        var dis = product?.distributors.filter(
+        console.log("PRODUCT",product);
+        var dis = product?.distributors?.filter(
           (pro) => pro.distributorId == item[i].distributor_id
         );
-        
+        console.log("DIS",dis);
         var obj = {
           _id: item[i]?._id,
           product_id: item[i]?.product_id,
           product_name: product?.title,
           distributor_name: dis[i]?.fristname,
           distributor_id: dis[i]?.distributorId,
-          price: dis[0]?.price,
+          price: dis[i]?.price,
           quantity: item[i]?.quantity,
           product: product
         };
@@ -739,6 +743,7 @@ module.exports.checkout = async (req, res) => {
 
 
         var obje = {
+          
           id: product._id,
           name: product.title,
           image: product.image,

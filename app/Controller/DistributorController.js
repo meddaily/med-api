@@ -16,6 +16,7 @@ const PDFDocument = require('pdfkit');
 const pdf = require("html-pdf");
 const path = require("path");
 const ejs = require("ejs");
+const { ObjectId } = require('mongodb');
 
 
 // login function
@@ -409,38 +410,141 @@ module.exports.create_payout = async (req, res) => {
 };
 
 const mongoose = require("mongoose");
+// module.exports.create_invoice = async (req, res) => {
+//   try {
+//     const { items, order_id } = req.body;
+
+//     // Find the order by order_id
+//     const getOrder = await Order.findOne({ order_id: order_id });
+//     if (!getOrder) throw new Error("Order not found");
+
+//     // Check order status
+//     if (getOrder.order_status === 1 || getOrder.order_status === 3) {
+//       return res.send({ status: true, message: "Order already completed" });
+//     }
+
+//     console.log("===================>", getOrder);
+
+//     // Iterate through items and update stock for each product
+//     for (const item of items) {
+//       const objectId = getOrder.distributor_id;
+//       const idValue = objectId.valueOf();
+
+//       await Product.updateOne(
+//         {
+//           _id: getOrder.products[0].id,
+//           "distributors.distributorId": idValue
+//         },
+//         {
+//           $inc: {
+//             "distributors.$.stock": -parseInt(getOrder.products[0].quantity)
+//           }
+//         }
+//       );
+
+//       // Assign batch_no and exp_date to the product in the order
+//       getOrder.products[0].batch_no = item.batch_no;
+//       getOrder.products[0].exp_date = item.exp_date;
+//     }
+
+//     // Set order status to 1 (assuming 1 means completed)
+//     getOrder.order_status = 1;
+
+//     // Save the updated order
+//     await getOrder.save();
+
+//     res.send({ status: true, message: "Order completion success" });
+//   } catch (err) {
+//     console.error(err);
+//     res.send({ err: true, data: err.message });
+//   }
+// };
+
 module.exports.create_invoice = async (req, res) => {
   try {
-    let { batch_no, exp_date, order_id } = req.body;
-    let getOrder = await Order.findOne({ order_id: order_id });
-    if (!getOrder) throw new Error("not found");
-    if (getOrder.order_status == 1 || getOrder.order_status == 3) {
-      return res.send({ status: true, message: "order already completed" });
+    const { items, order_id } = req.body;
+
+    // Find the order by order_id
+    const getOrder = await Order.findOne({ order_id: order_id });
+    if (!getOrder) throw new Error("Order not found");
+
+    // Check order status
+    if (getOrder.order_status === 1 || getOrder.order_status === 3) {
+      return res.send({ status: true, message: "Order already completed" });
     }
-    console.log("===================>", getOrder);
-    const objectId = getOrder.distributor_id;
-    const idValue = objectId.valueOf();
 
-    await Product.updateOne(
-      { _id: getOrder.products[0].id, "distributors.distributorId": idValue },
-      {
-        $inc: {
-          "distributors.$.stock": -parseInt(getOrder.products[0].quantity),
+    for (const item of items) {
+      const objectId = getOrder.distributor_id;
+      const idValue = objectId.valueOf();
+    
+      const productId = item._id;
+      const quantity = item.quantity; 
+    
+      await Product.updateOne(
+        {
+          _id: productId,
+          "distributors.distributorId": idValue
         },
+        {
+          $inc: {
+            "distributors.$.stock": -parseInt(quantity)
+          }
+        }
+      );
+
+      const productInOrderIndex = getOrder.products.findIndex(product => product.id.toString() === productId);
+    
+      if (productInOrderIndex !== -1) {
+        getOrder.products[productInOrderIndex].batch_no = item.batch_no;
+        getOrder.products[productInOrderIndex].exp_date = item.exp_date;
       }
-    );
-
-    getOrder.batch_no = batch_no;
-    getOrder.exp_date = exp_date;
+    }
+    
     getOrder.order_status = 1;
+    
+    // Save the updated order
     await getOrder.save();
-
-    res.send({ status: true, message: "order completion success" });
+    
+    res.send({ status: true, message: "Order completion success" });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.send({ err: true, data: err.message });
   }
 };
+
+
+// module.exports.create_invoice = async (req, res) => {
+//   try {
+//     let { batch_no, exp_date, order_id } = req.body;
+//     let getOrder = await Order.findOne({ order_id: order_id });
+//     if (!getOrder) throw new Error("not found");
+//     if (getOrder.order_status == 1 || getOrder.order_status == 3) {
+//       return res.send({ status: true, message: "order already completed" });
+//     }
+//     console.log("===================>", getOrder);
+//     const objectId = getOrder.distributor_id;
+//     const idValue = objectId.valueOf();
+
+//     await Product.updateOne(
+//       { _id: getOrder.products[0].id, "distributors.distributorId": idValue },
+//       {
+//         $inc: {
+//           "distributors.$.stock": -parseInt(getOrder.products[0].quantity),
+//         },
+//       }
+//     );
+
+//     getOrder.batch_no = batch_no;
+//     getOrder.exp_date = exp_date;
+//     getOrder.order_status = 1;
+//     await getOrder.save();
+
+//     res.send({ status: true, message: "order completion success" });
+//   } catch (err) {
+//     console.log(err);
+//     res.send({ err: true, data: err.message });
+//   }
+// };
 module.exports.my_inventory = async (req, res) => {
   const distributorId = req.user._id;
   Product.aggregate([
