@@ -111,7 +111,7 @@ module.exports.all_order = async (req, res) => {
 
         // Check if distributerName is defined before accessing its properties
       
-          e._doc.distributor_name = distributerName.firstname 
+          e._doc.distributor_name = distributerName?.firstname 
           
      
 

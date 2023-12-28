@@ -48,8 +48,10 @@ module.exports.distributor_login = async (req, resp) => {
 
 // get user details using token
 module.exports.distributor_register = async (req, resp) => {
+  console.log("BODY",req.body.phonenumber);
   await Distributor.findOne({ phonenumber: req.body.phonenumber }).then(
     async (user) => {
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",user);  
       if (user != null) {
         return resp.send({
           status: false,
@@ -97,7 +99,7 @@ module.exports.distributor_register = async (req, resp) => {
           }
         }, async (err, file) => {
           if (err) {
-            console.log(err)
+            console.log(err,"new>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
             return resp.status(500).send({ status: false, message: "Internal Server Error" });
           }
           const [url] = await file.getSignedUrl({
@@ -138,20 +140,19 @@ module.exports.distributor_register = async (req, resp) => {
               area,
               state,
               distributorcode,
-              gstNumber,
-              bankName,
+              gst_number,
+              bank_name,
               distributortype,
-              benificiaryName,
-              accountNumber,
+              benificiary_name,
+              account_number,
               gstImageURL,
               drugImageURL,
+              drug_licence,
               email,
               password,
-              ifsc,
-              upiId,
-              status,
-              date,
+              ifsc_code,
             } = req.body;
+            // console.log("BODYREQ",req.body);
 
             const newData = {
               firstname: firstname,
@@ -163,22 +164,21 @@ module.exports.distributor_register = async (req, resp) => {
               password: password,
               distributorcode: distributorcode,
               distributortype: distributortype,
-              gst_number: gstNumber,
+              gst_number: gst_number,
               email: email,
               phonenumber: phonenumber,
-              bank_name: bankName,
-              benificiary_name: benificiaryName,
-              account_number: accountNumber,
+              bank_name: bank_name,
+              benificiary_name: benificiary_name,
+              account_number: account_number,
               gst_file: gstImageURL,
               image: drugImageURL,
-              ifsc_code: ifsc,
-              upiId: upiId,
-              status: status,
-              date: date,
+              ifsc_code: ifsc_code,
+              drug_licence: drug_licence
             }
-
-            const distributer = new Distributor({newData});
-            const distributer_data = await distributer.save();
+            // console.log("NEWDAT",newData);
+            // const distributer = new Distributor({newData});
+            // const distributer_data = await distributer.save();
+            const distributer_data = await Distributor.create(newData)
             fs.unlinkSync(tempPath);
             return resp.status(200).json({
               status: true,
