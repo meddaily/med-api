@@ -111,7 +111,7 @@ module.exports = (route) => {
   route.post(
     "/return_order",
     auth,
-    upload.uploadToS3,
+    // upload.uploadToS3,
     RetailerController.return_order
   );
   route.get("/get_all_return", auth, RetailerController.get_return);

@@ -203,27 +203,7 @@ module.exports.retailer_register = async (req, resp) => {
         }
       }
     },
-     async (err, file) => {
-      if (err) {
-        return resp.status(500).send({ status: false, message: "Internal Server Error" });
-      }
-      const [url] = await file.getSignedUrl({
-        action: 'read',
-        expires: '01-01-3000',
-      });
-      req.body.gstImageURL = url
-
-      fs.writeFileSync(tempPath, Buffer.from(drugLicenseImage.buffer));
-      const imagePath = `${Date.now()}.png`;
-      bucket.upload(tempPath, {
-        destination: `RetailerDrugLicenseImage/${imagePath}`,
-        metadata: {
-          contentType: 'image/png',
-          metadata: {
-            firebaseStorageDownloadToken: uuidv4()
-          }
-        }
-      }, async (err, file) => {
+      async (err, file) => {
         if (err) {
           return resp.status(500).send({ status: false, message: "Internal Server Error" });
         }
@@ -231,61 +211,81 @@ module.exports.retailer_register = async (req, resp) => {
           action: 'read',
           expires: '01-01-3000',
         });
-        req.body.drugImageURL = url
+        req.body.gstImageURL = url
 
-        const {
-          typeOfBusiness,
-          businessName,
-          ownerName,
-          state,
-          businessAddress,
-          pincode,
-          city,
-          area,
-          phone,
-          password,
-          email,
-          pharmacistName,
-          PharmacistPhoneNo,
-          licenseNumber,
-          gstInNumber,
-          panNumber,
-          gstImageURL,
-          drugImageURL
-        } = req.body;
+        fs.writeFileSync(tempPath, Buffer.from(drugLicenseImage.buffer));
+        const imagePath = `${Date.now()}.png`;
+        bucket.upload(tempPath, {
+          destination: `RetailerDrugLicenseImage/${imagePath}`,
+          metadata: {
+            contentType: 'image/png',
+            metadata: {
+              firebaseStorageDownloadToken: uuidv4()
+            }
+          }
+        }, async (err, file) => {
+          if (err) {
+            return resp.status(500).send({ status: false, message: "Internal Server Error" });
+          }
+          const [url] = await file.getSignedUrl({
+            action: 'read',
+            expires: '01-01-3000',
+          });
+          req.body.drugImageURL = url
 
-        const newData = {
-          businesstype: typeOfBusiness,
-          businessname: businessName,
-          ownername: ownerName,
-          state:state,
-          address: businessAddress,
-          pincode: pincode,
-          city: city,
-          area: area,
-          phonenumber: phone,
-          password: password,
-          email: email,
-          pharname: pharmacistName,
-          pharphone:PharmacistPhoneNo,
-          licenseno: licenseNumber,
-          gstno: gstInNumber,
-          panno: panNumber,
-          licenseimage: drugImageURL,
-          gstimage: gstImageURL,
-        }
+          const {
+            typeOfBusiness,
+            businessName,
+            ownerName,
+            state,
+            businessAddress,
+            pincode,
+            city,
+            area,
+            phone,
+            password,
+            email,
+            pharmacistName,
+            PharmacistPhoneNo,
+            licenseNumber,
+            gstInNumber,
+            panNumber,
+            gstImageURL,
+            drugImageURL
+          } = req.body;
 
-        const retailer = new Retailer(newData);
-        const retailer_data = await retailer.save();
+          const newData = {
+            businesstype: typeOfBusiness,
+            businessname: businessName,
+            ownername: ownerName,
+            state: state,
+            address: businessAddress,
+            pincode: pincode,
+            city: city,
+            area: area,
+            phonenumber: phone,
+            password: password,
+            email: email,
+            pharname: pharmacistName,
+            pharphone: PharmacistPhoneNo,
+            licenseno: licenseNumber,
+            gstno: gstInNumber,
+            panno: panNumber,
+            licenseimage: drugImageURL,
+            gstimage: gstImageURL,
+          }
 
-        fs.unlinkSync(tempPath);
-        return resp.status(200).json({
-          status: true,
-          message: 'Retailer signup successfully',
+          const retailer = new Retailer(newData);
+          const retailer_data = await retailer.save();
+
+          fs.unlinkSync(tempPath);
+          return resp.status(200).json({
+            status: true,
+            message: 'Retailer signup successfully',
+          })
+
         })
-
       })
-    })
 
 
 
@@ -536,12 +536,12 @@ module.exports.add_to_cart = async (req, res) => {
           message: "Item already in cart",
         });
       }
-       else if (cartdata.distributor_id != req.body.distributor_id) {
+      else if (cartdata.distributor_id != req.body.distributor_id) {
         return res.send({
           status: false,
           message: "You can order one distributor at one time",
         });
-      } 
+      }
       else {
         var obj = {
           user_id: req.user._id,
@@ -582,7 +582,7 @@ module.exports.add_to_cart = async (req, res) => {
 };
 
 module.exports.get_cart = async (req, res) => {
-  console.log("ID>>>>>>>>>>>>>>>>>>>",req.user._id);
+  console.log("ID>>>>>>>>>>>>>>>>>>>", req.user._id);
   Cart.find({ user_id: req.user._id })
     .then(async (item) => {
       console.log("cart values", item); // Log the fetched items
@@ -592,11 +592,11 @@ module.exports.get_cart = async (req, res) => {
         var product = await Product.findOne({ _id: item[i].product_id }).catch((err) => {
           console.error("Error fetching product:", err);
         });
-        console.log("PRODUCT",product);
+        console.log("PRODUCT", product);
         var dis = product?.distributors?.filter(
           (pro) => pro.distributorId == item[i].distributor_id
         );
-        console.log("DIS",dis);
+        console.log("DIS", dis);
         var obj = {
           _id: item[i]?._id,
           product_id: item[i]?.product_id,
@@ -743,7 +743,7 @@ module.exports.checkout = async (req, res) => {
 
 
         var obje = {
-          
+
           id: product._id,
           name: product.title,
           image: product.image,
@@ -757,7 +757,7 @@ module.exports.checkout = async (req, res) => {
       }
       await product.save();
     });
- 
+
     var orderid =
       "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
 
@@ -799,36 +799,11 @@ module.exports.my_order = async (req, res) => {
 
 module.exports.return_order = async (req, res) => {
   console.log("called");
-  var id = req.body.order_id;
-  var status = "returned";
+  const id = req.body.order_id;
+  console.log(">>>>>>>>>>>>", id);
 
-  const image = req.files.find(
-    (file) => file.fieldname === "image"
-  );
-
-  const tempPath = 'tempfile.jpg';
-  fs.writeFileSync(tempPath, Buffer.from(image.buffer));
-  const imagePath = `${Date.now()}.png`;
-  bucket.upload(tempPath, {
-    destination: `ReturnOrder/${imagePath}`,
-    metadata: {
-      contentType: 'image/png',
-      metadata: {
-        firebaseStorageDownloadToken: uuidv4()
-      }
-    }
-  }, async (err, file) => {
-    if (err) {
-      return res.status(500).send({ status: false, message: "Internal Server Error" });
-    }
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '01-01-3000',
-    });
-    req.body.url = url
-    console.log("IMAGEURL", url);
-    fs.unlinkSync(tempPath)
-    await Order.updateOne(
+  try {
+    const updatedOrder = await Order.findOneAndUpdate(
       { order_id: id, order_status: 3 },
       {
         order_id: "RETURN" + id,
@@ -836,30 +811,126 @@ module.exports.return_order = async (req, res) => {
         return_status: 1,
         return_reason: req.body.reason,
         return_message: req.body.message,
-        return_image: req.body.url,
-      }
-    )
-      .then((result) => {
-        if (result.modifiedCount > 0) {
-          return res.send({
-            status: true,
-            message: "order return success",
-            data: result,
-          });
-        }
-        res.send({
-          status: false,
-          message: "order already complete or not found",
-          data: null,
-        });
-      })
-      .catch((err) => {
-        res.send({ status: false, message: err });
-        console.log(err);
+        // return_image: req.body.url,
+      },
+      { new: true }
+    );
+    console.log(">>>>>>>>>>>>", updatedOrder)
+    if (updatedOrder) {
+      return res.send({
+        status: true,
+        message: "Order return success",
+        data: updatedOrder,
       });
-  })
-
+    } else {
+      return res.send({
+        status: false,
+        message: "Order not found or already complete",
+        data: null,
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ status: false, message: "Internal server error" });
+  }
 };
+
+
+// module.exports.return_order = async (req, res) => {
+//   console.log("called");
+//   var id = req.body.order_id;
+//   console.log(">>>>>>>>>>>>",id);
+//   var status = "returned";
+
+//   // const image = req.files.find(
+//   //   (file) => file.fieldname === "image"
+//   // );
+
+//   // const tempPath = 'tempfile.jpg';
+//   // fs.writeFileSync(tempPath, Buffer.from(image.buffer));
+//   // const imagePath = `${Date.now()}.png`;
+//   // bucket.upload(tempPath, {
+//   //   destination: `ReturnOrder/${imagePath}`,
+//     // metadata: {
+//     //   contentType: 'image/png',
+//     //   metadata: {
+//     //     firebaseStorageDownloadToken: uuidv4()
+//     //   }
+//     // }
+
+//     const data= await Order.updateOne(
+//        { order_id: id, order_status: 3 },
+//        {
+//          order_id: "RETURN" + id,
+//          return_quantity: req.body.quantity,
+//          return_status: 1,
+//          return_reason: req.body.reason,
+//          return_message: req.body.message,
+//          // return_image: req.body.url,
+//        }
+//      )
+//     .then(() => {
+//         // if (result.modifiedCount > 0) {
+//           return res.send({
+//             status: true,
+//             message: "order return success",
+//             data: data,
+//           });
+//         // }
+//         // res.send({
+//         //   status: false,
+//         //   message: "order already complete or not found",
+//         //   data: null,
+//         // });
+//       })
+//       .catch((err) => {
+//         res.send({ status: false, message: err });
+//         console.log(err);
+//       }); 
+//   }, async (err) => {
+// if (err) {
+//   return res.status(500).send({ status: false, message: "Internal Server Error" });
+// }
+// const [url] = await file.getSignedUrl({
+//   action: 'read',
+//   expires: '01-01-3000',
+// });
+// req.body.url = url
+// console.log("IMAGEURL", url);
+// fs.unlinkSync(tempPath)
+// await Order.updateOne(
+//   { order_id: id, order_status: 3 },
+//   {
+//     order_id: "RETURN" + id,
+//     return_quantity: req.body.quantity,
+//     return_status: 1,
+//     return_reason: req.body.reason,
+//     return_message: req.body.message,
+//     // return_image: req.body.url,
+//   }
+// )
+//   .then((result) => {
+//     if (result.modifiedCount > 0) {
+//       return res.send({
+//         status: true,
+//         message: "order return success",
+//         data: result,
+//       });
+//     }
+//     res.send({
+//       status: false,
+//       message: "order already complete or not found",
+//       data: null,
+//     });
+//   })
+//   .catch((err) => {
+//     res.send({ status: false, message: err });
+//     console.log(err);
+//   });
+// }
+// )
+
+// };
 
 module.exports.order_details = async (req, res) => {
   try {
@@ -876,13 +947,13 @@ module.exports.order_details = async (req, res) => {
 
         let distributerName = await Distributor.findOne({
           _id: result.distributor_id,
-        }); 
+        });
         let retailerName = await Retailer.findOne({
           _id: result.retailer_id,
         });
         result._doc.distributor_name =
           distributerName?.firstname + " " + distributerName?.lastname;
-          console.log(">>?>?>",result._doc.distributor_name);
+        console.log(">>?>?>", result._doc.distributor_name);
         result._doc.distributor_address =
           distributerName?.city +
           " " +
