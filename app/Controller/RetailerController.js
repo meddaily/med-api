@@ -798,16 +798,14 @@ module.exports.my_order = async (req, res) => {
 };
 
 module.exports.return_order = async (req, res) => {
-  console.log("called");
-  const id = req.body.order_id;
-  console.log(">>>>>>>>>>>>", id);
-
+  // console.log("called");
+  const orderId = req.body.order_id;
+  // console.log(">>>>>>>>>>>>", orderId);
   try {
     const updatedOrder = await Order.findOneAndUpdate(
-      { order_id: id, order_status: 3 },
+      { order_id: orderId, order_status: 3 },
       {
-        order_id: "RETURN" + id,
-        return_quantity: req.body.quantity,
+        order_id: "RETURN" + orderId,
         return_status: 1,
         return_reason: req.body.reason,
         return_message: req.body.message,
@@ -815,8 +813,16 @@ module.exports.return_order = async (req, res) => {
       },
       { new: true }
     );
-    console.log(">>>>>>>>>>>>", updatedOrder)
     if (updatedOrder) {
+      const productIndices = updatedOrder.products.map((product) => {
+        return req.body.items.findIndex((item) => product.id.toString() === item.id);
+      });
+      productIndices.forEach((index, i) => {
+        if (index !== -1) {
+          updatedOrder.products[index].return_quantity += req.body.items[i].quantity;
+        }
+      });
+      await updatedOrder.save();
       return res.send({
         status: true,
         message: "Order return success",

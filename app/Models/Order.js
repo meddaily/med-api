@@ -14,7 +14,8 @@ var OrderSchema = mongoose.Schema(
         price: Number,
         batch_no: String,
         exp_date: String,
-        quantity: Number
+        quantity: Number,
+        return_quantity: { type: Number, default: 0 }
       }
     ],
     batch_no: { type: String, default: "" },
