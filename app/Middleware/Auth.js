@@ -3,6 +3,7 @@ const tokendb = require("../Models/token");
 
 const verifyToken = async (req, resp, next) => {
   const token = req.headers["token"];
+  // console.log("FILES");
 
   if (!token) {
     resp.send({

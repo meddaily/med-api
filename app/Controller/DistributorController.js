@@ -49,10 +49,10 @@ module.exports.distributor_login = async (req, resp) => {
 
 // get user details using token
 module.exports.distributor_register = async (req, resp) => {
-  console.log("BODY",req.body.phonenumber);
+  console.log("BODY", req.body);
   await Distributor.findOne({ phonenumber: req.body.phonenumber }).then(
     async (user) => {
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",user);  
+      console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", user);
       if (user != null) {
         return resp.send({
           status: false,
@@ -100,7 +100,7 @@ module.exports.distributor_register = async (req, resp) => {
           }
         }, async (err, file) => {
           if (err) {
-            console.log(err,"new>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            console.log(err, "new>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
             return resp.status(500).send({ status: false, message: "Internal Server Error" });
           }
           const [url] = await file.getSignedUrl({
@@ -340,7 +340,7 @@ module.exports.distributor_order = async (req, res) => {
           });
           e._doc.distributor_name =
             distributerName.firstname + " " + distributerName.lastname;
-          e._doc.retailer_name = retailerName.ownername;
+          e._doc.retailer_name = retailerName?.ownername;
           return e;
         })
       );
@@ -476,10 +476,10 @@ module.exports.create_invoice = async (req, res) => {
     for (const item of items) {
       const objectId = getOrder.distributor_id;
       const idValue = objectId.valueOf();
-    
+
       const productId = item._id;
-      const quantity = item.quantity; 
-    
+      const quantity = item.quantity;
+
       await Product.updateOne(
         {
           _id: productId,
@@ -493,18 +493,18 @@ module.exports.create_invoice = async (req, res) => {
       );
 
       const productInOrderIndex = getOrder.products.findIndex(product => product.id.toString() === productId);
-    
+
       if (productInOrderIndex !== -1) {
         getOrder.products[productInOrderIndex].batch_no = item.batch_no;
         getOrder.products[productInOrderIndex].exp_date = item.exp_date;
       }
     }
-    
+
     getOrder.order_status = 1;
-    
+
     // Save the updated order
     await getOrder.save();
-    
+
     res.send({ status: true, message: "Order completion success" });
   } catch (err) {
     console.error(err);
@@ -685,8 +685,12 @@ module.exports.getDemofile = async (req, res) => {
 
 module.exports.bulkUpdate = async (req, res) => {
   try {
-    filePath = req?.file?.path;
-    console.log(req.file);
+    fileBuffer = req?.files[0]?.buffer;
+    const filePath = `bulkCSV${Date.now}.xlsx`;
+    fs.writeFileSync(filePath, fileBuffer);
+
+    console.log(req.file, "new file ");
+    console.log(req.files, "new filepath");
 
     // Load the workbook from the file
     const workbook = XLSX.readFile(filePath);
@@ -700,34 +704,38 @@ module.exports.bulkUpdate = async (req, res) => {
 
     // Print the JSON data
     console.log("jsonDataas", jsonData);
-    jsonData.forEach(async (e) => {
-      const distributorId = e._id;
-      const productId = e.product_id;
-      const newPrice = parseInt(e.price);
-      const newStock = parseInt(e.stock);
+    for (let e of jsonData) {
+        const productId = e._id;
+        // const productId = e.product_id;
+        const newPrice = parseInt(e.price);
+        const newStock = parseInt(e.stock);
 
-      Product.updateOne(
-        {
-          "distributors.distributorId": distributorId,
-          _id: productId,
-        },
-        {
-          $set: {
-            "distributors.$.price": newPrice,
-            "distributors.$.stock": newStock,
+        Product.updateOne(
+          {
+            "distributors.distributorId": req.user._id,
+            _id: productId,
           },
-        }
-      )
-        .then((data) => {
-          console.log("Price and stock values updated successfully.");
-        })
-        .catch((error) => {
-          console.error("Error updating price and stock values:", error);
-        });
-    });
+          {
+            $set: {
+              "distributors.$.price": newPrice,
+              "distributors.$.stock": newStock,
+            },
+          }
+        )
+          .then((data) => {
+
+            console.log("Price and stock values updated successfully.", data);
+          })
+          .catch((error) => {
+            fs.unlinkSync(filePath);
+            console.error("Error updating price and stock values:", error);
+          });
+    }
+    fs.unlinkSync(filePath);
     res.send({ status: true, message: "Data updated successfully" });
   } catch (err) {
     console.log(err);
+    fs.unlinkSync(filePath);
     res.send({ status: false, message: err.message });
   }
 };
@@ -814,7 +822,7 @@ module.exports.get_invoice = async (req, res) => {
 
     const html = await ejs.renderFile(
       path.join(__dirname, "../views/pdf.ejs"),
-      { getRetailer,getDistributor,getOrder }
+      { getRetailer, getDistributor, getOrder }
     );
     pdf.create(html).toBuffer((err, buffer) => {
       const base64String = buffer.toString("base64");
@@ -845,7 +853,7 @@ module.exports.get_invoice = async (req, res) => {
     // doc.text(`Distributor: ${getDistributor?.firstname} ${getDistributor?.lastname}`);
     // doc.text('\n');
 
- 
+
 
     // await Promise.all(getOrder.products.map(async (product) => {
     //   await new Promise(resolve => {
@@ -987,12 +995,12 @@ module.exports.get_summary = async (req, res) => {
     let getDistributor = await Distributor.findOne({
       _id: getOrder.distributor_id,
     });
-    console.log("RE",getRetailer);
-    console.log("DIS",getDistributor);
+    console.log("RE", getRetailer);
+    console.log("DIS", getDistributor);
 
     const html = await ejs.renderFile(
       path.join(__dirname, "../views/summarypdf.ejs"),
-      { getRetailer,getDistributor,getOrder }
+      { getRetailer, getDistributor, getOrder }
     );
     pdf.create(html).toBuffer((err, buffer) => {
       const base64String = buffer.toString("base64");
@@ -1171,8 +1179,8 @@ module.exports.distributor_get_product_retailer = async (req, res) => {
 
 exports.distributor_reject = async (req, res) => {
   const distributorId = req.body.id;
-  console.log("???????????????????????????????????????",distributorId);
-  
+  console.log("???????????????????????????????????????", distributorId);
+
   try {
     // Find the distributor based on distributorId
     const distributor = await Distributor.findOne({ _id: distributorId });

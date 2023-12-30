@@ -87,7 +87,7 @@ module.exports = (route) => {
   route.post(
     "/bulk_update",
     auth,
-    upload.normaluploadMiddleware,
+    upload.bulkUpdateMulter,
     DistributorController.bulkUpdate
   );
 

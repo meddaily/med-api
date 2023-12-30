@@ -65,7 +65,7 @@ module.exports = (admin) => {
   admin.post("/accept_payout", AdminController.accept_payout);
   admin.post(
     "/bulkupload",
-    upload.normaluploadMiddleware,
+    // upload.normaluploadMiddleware,
     ProductController.bulk_upload
   );
   admin.get("/searchProduct", ProductController.searchProduct);

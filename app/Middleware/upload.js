@@ -77,6 +77,7 @@ const uploadToS3multiple = (req, res, next) => {
 const storage1 = multer.diskStorage({
   destination: function (req, file, cb) {
     // Specify the destination directory where uploaded files will be stored
+    console.log('Files');
     cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
@@ -103,9 +104,11 @@ const streamedUpload = async (data) => {
 };
 // Define the Multer middleware function
 const normaluploadMiddleware = upload1.single("file");
+const bulkUpdateMulter = multer({storage: multer.diskStorage({})}).single('file')
 module.exports = {
   streamedUpload: streamedUpload,
   uploadToS3: uploadToS3,
   uploadToS3multiple: uploadToS3multiple,
   normaluploadMiddleware: normaluploadMiddleware,
+  bulkUpdateMulter: bulkUpdateMulter
 };

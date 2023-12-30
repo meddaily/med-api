@@ -237,8 +237,12 @@ const Distributor = require("../Models/Distributor");
 const { setUncaughtExceptionCaptureCallback } = require("process");
 module.exports.bulk_upload = async (req, res) => {
   try {
-    filePath = req.file.path;
-    console.log(req.file);
+    // filePath = req.file.path;
+    console.log(req.body,'Body')
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",req.files);
+    fileBuffer = req?.files[0]?.buffer;
+    const filePath = `bulkCSV${Date.now}.xlsx`;
+    fs.writeFileSync(filePath, fileBuffer);
 
     // Load the workbook from the file
     const workbook = XLSX.readFile(filePath);
@@ -249,15 +253,17 @@ module.exports.bulk_upload = async (req, res) => {
 
     // Convert the worksheet to JSON format
     const jsonData = await XLSX.utils.sheet_to_json(worksheet);
-    let findCategory = await category.findOne({ name: req.body.category });
+    let findCategory = await category.findById(req.body.category_id);
     console.log(findCategory);
     let promiseArray = jsonData.map(async (e) => {
       e.category_id = findCategory._id;
       await addData(e);
     });
+    fs.unlinkSync(filePath);
     await Promise.all(promiseArray);
     res.send({ status: true, message: "bulk upload successful" });
   } catch (err) {
+    // fs.unlinkSync(filePath);
     console.log(err);
     res.send({ status: false, message: "bulk upload failed" });
   }
