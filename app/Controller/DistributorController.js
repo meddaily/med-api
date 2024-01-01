@@ -28,18 +28,23 @@ module.exports.distributor_login = async (req, resp) => {
     async (result) => {
       console.log(result);
       if (result != null) {
+        console.log("result verify",result.verify);
+        if(result.verify == "true"){
+          const jwt = generateUsertoken(result);
 
-        const jwt = generateUsertoken(result);
-
-        let saveToken = new token({ token: jwt });
-
-        await saveToken.save();
-        resp.json({
-          status: true,
-          message: "login successful",
-          data: result,
-          token: jwt,
-        });
+          let saveToken = new token({ token: jwt });
+  
+          await saveToken.save();
+          resp.json({
+            status: true,
+            message: "login successful",
+            data: result,
+            token: jwt,
+          });
+        }
+        else{
+          resp.json({ status: false, message: 'Distributor not verified' });
+        }
       } else {
         resp.json({ status: false, message: "login unsuccessful" });
       }
@@ -502,7 +507,6 @@ module.exports.create_invoice = async (req, res) => {
 
     getOrder.order_status = 1;
 
-    // Save the updated order
     await getOrder.save();
 
     res.send({ status: true, message: "Order completion success" });

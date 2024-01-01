@@ -30,15 +30,21 @@ module.exports.retailer_login = async (req, resp) => {
   }).then(async (result) => {
     console.log(">>>>>>>>>>>>>>>", result);
     if (result != null) {
-      const jwt = generateUsertoken(result);
-      let saveToken = new token({ token: jwt });
-      await saveToken.save();
-      resp.json({
-        status: true,
-        message: "login successful",
-        data: result,
-        token: jwt,
-      });
+      console.log('Verify Status:', result.verify);
+      if (result.verify == "true") {
+        const jwtToken = generateUsertoken(result);
+        let saveToken = new token({ token: jwtToken });
+        await saveToken.save();
+
+        resp.json({
+          status: true,
+          message: 'Login successful',
+          data: result,
+          token: jwtToken,
+        });
+      } else {
+        resp.json({ status: false, message: 'Retailer not verified' });
+      }
     } else {
       resp.json({ status: false, message: "login unsuccessful" });
     }
@@ -720,6 +726,7 @@ module.exports.checkout = async (req, res) => {
   try {
     let item = [];
     let distributorId;
+    console.log("body",req.body);
 
 
     await Cart.find({ user_id: req.user._id }).then(async (cartdata) => {
@@ -800,7 +807,7 @@ module.exports.my_order = async (req, res) => {
 module.exports.return_order = async (req, res) => {
   // console.log("called");
   const orderId = req.body.order_id;
-  // console.log(">>>>>>>>>>>>", orderId);
+  console.log(">>>>>>>>>>>>", orderId);
   try {
     const updatedOrder = await Order.findOneAndUpdate(
       { order_id: orderId, order_status: 3 },
@@ -813,13 +820,15 @@ module.exports.return_order = async (req, res) => {
       },
       { new: true }
     );
+    console.log("UPDATE",updatedOrder);
     if (updatedOrder) {
       const productIndices = updatedOrder.products.map((product) => {
         return req.body.items.findIndex((item) => product.id.toString() === item.id);
       });
+      console.log(">>>>>>>>>>>>>>>>>>>",productIndices);
       productIndices.forEach((index, i) => {
         if (index !== -1) {
-          updatedOrder.products[index].return_quantity += req.body.items[i].quantity;
+          updatedOrder.products[index].return_quantity = req.body.items[i]?.quantity;
         }
       });
       await updatedOrder.save();
