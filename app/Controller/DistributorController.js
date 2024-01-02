@@ -12,12 +12,10 @@ const Order = require("../Models/Order");
 // let easyinvoice = require("easyinvoice");
 // const Upload = require("../Middleware/upload");
 const { v4: uuidv4 } = require('uuid');
-const PDFDocument = require('pdfkit');
-const pdf = require("html-pdf");
+const html_to_pdf = require('html-pdf-node');
 const path = require("path");
 const ejs = require("ejs");
 const { ObjectId } = require('mongodb');
-
 
 // login function
 module.exports.distributor_login = async (req, resp) => {
@@ -28,12 +26,12 @@ module.exports.distributor_login = async (req, resp) => {
     async (result) => {
       console.log(result);
       if (result != null) {
-        console.log("result verify",result.verify);
-        if(result.verify == "true"){
+        console.log("result verify", result.verify);
+        if (result.verify == "true") {
           const jwt = generateUsertoken(result);
 
           let saveToken = new token({ token: jwt });
-  
+
           await saveToken.save();
           resp.json({
             status: true,
@@ -42,7 +40,7 @@ module.exports.distributor_login = async (req, resp) => {
             token: jwt,
           });
         }
-        else{
+        else {
           resp.json({ status: false, message: 'Distributor not verified' });
         }
       } else {
@@ -709,31 +707,31 @@ module.exports.bulkUpdate = async (req, res) => {
     // Print the JSON data
     console.log("jsonDataas", jsonData);
     for (let e of jsonData) {
-        const productId = e._id;
-        // const productId = e.product_id;
-        const newPrice = parseInt(e.price);
-        const newStock = parseInt(e.stock);
+      const productId = e._id;
+      // const productId = e.product_id;
+      const newPrice = parseInt(e.price);
+      const newStock = parseInt(e.stock);
 
-        Product.updateOne(
-          {
-            "distributors.distributorId": req.user._id,
-            _id: productId,
+      Product.updateOne(
+        {
+          "distributors.distributorId": req.user._id,
+          _id: productId,
+        },
+        {
+          $set: {
+            "distributors.$.price": newPrice,
+            "distributors.$.stock": newStock,
           },
-          {
-            $set: {
-              "distributors.$.price": newPrice,
-              "distributors.$.stock": newStock,
-            },
-          }
-        )
-          .then((data) => {
+        }
+      )
+        .then((data) => {
 
-            console.log("Price and stock values updated successfully.", data);
-          })
-          .catch((error) => {
-            fs.unlinkSync(filePath);
-            console.error("Error updating price and stock values:", error);
-          });
+          console.log("Price and stock values updated successfully.", data);
+        })
+        .catch((error) => {
+          fs.unlinkSync(filePath);
+          console.error("Error updating price and stock values:", error);
+        });
     }
     fs.unlinkSync(filePath);
     res.send({ status: true, message: "Data updated successfully" });
@@ -828,14 +826,24 @@ module.exports.get_invoice = async (req, res) => {
       path.join(__dirname, "../views/pdf.ejs"),
       { getRetailer, getDistributor, getOrder }
     );
-    pdf.create(html).toBuffer((err, buffer) => {
-      const base64String = buffer.toString("base64");
+
+    html_to_pdf.generatePdf({ content: html }, { format: 'A4', printBackground: true }).then(pdfBuffer => {
+      const base64String = pdfBuffer.toString("base64");
+
       return res.status(200).json({
         status: "Success",
         message: "pdf create successFully",
         data: base64String,
       });
-    });
+    })
+    // pdf.create(html).toBuffer((err, buffer) => {
+    //   const base64String = buffer.toString("base64");
+    //   return res.status(200).json({
+    //     status: "Success",
+    //     message: "pdf create successFully",
+    //     data: base64String,
+    //   });
+    // });
     // const doc = new PDFDocument();
 
 
@@ -988,65 +996,137 @@ module.exports.get_invoice = async (req, res) => {
 //   }
 // };
 
+// module.exports.get_summary = async (req, res) => {
+//   try {
+//     let getOrder = await Order.findOne({ order_id: req.query.order_id });
+//     if (!getOrder || getOrder.length == 0) {
+//       return res.send({ status: false, messsage: "Order not found" });
+//     }
+//     console.log(getOrder);
+//     let getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
+//     let getDistributor = await Distributor.findOne({
+//       _id: getOrder.distributor_id,
+//     });
+//     console.log("RE", getRetailer);
+//     console.log("DIS", getDistributor);
+
+//     const html = await ejs.renderFile(
+//       path.join(__dirname, "../views/summarypdf.ejs"),
+//       { getRetailer, getDistributor, getOrder }
+//     );
+//     pdf.create(html).toBuffer((err, buffer) => {
+//       const base64String = buffer.toString("base64");
+//       return res.status(200).json({
+//         status: "Success",
+//         message: "pdf create successFully",
+//         data: base64String,
+//       });
+//     });
+
+//     // var data = {
+//     //   client: {
+//     //     company: getRetailer.businessname,
+//     //     address: getRetailer.address,
+//     //     pin: getRetailer.pincode,
+//     //     city: getRetailer.city,
+//     //     gstno: getRetailer.gstno,
+//     //   },
+//     //   sender: {
+//     //     distributorName: getDistributor.firstname + getDistributor.lastname,
+//     //     area: getDistributor.area,
+//     //     pin: getDistributor.pin,
+//     //     city: getDistributor.city,
+//     //     state: getDistributor.state,
+//     //   },
+
+//     //   images: {
+//     //     logo: "https://meddaily.s3.ap-south-1.amazonaws.com/MEDDAILY-LOGO-inverted.png",
+//     //   },
+//     //   products: getOrder.products,
+//     //   bottomNotice: "Kindly pay your invoice within 15 days.",
+//     //   settings: {
+//     //     currency: "INR",
+//     //   },
+//     //   translate: {},
+//     //   customize: {
+//     //     // "template": fs.readFileSync('template.html', 'base64') // Must be base64 encoded html
+//     //   },
+//     // };
+//     // console.log(data);
+//     // return res.render('summarypdf',{getDistributor,getRetailer,getOrder})
+//     // res.send({ status: true, message: "data fetched ", data: data });
+//   } catch (err) {
+//     console.log(err);
+//     res.send({ status: false, message: err.message, data: null });
+//   }
+// };
+
+const util = require('util');
+const ejsRenderFile = util.promisify(ejs.renderFile);
+
 module.exports.get_summary = async (req, res) => {
   try {
     let getOrder = await Order.findOne({ order_id: req.query.order_id });
+    console.log("ORDER", req.query.order_id);
     if (!getOrder || getOrder.length == 0) {
       return res.send({ status: false, messsage: "Order not found" });
     }
-    console.log(getOrder);
+
     let getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
     let getDistributor = await Distributor.findOne({
       _id: getOrder.distributor_id,
     });
-    console.log("RE", getRetailer);
-    console.log("DIS", getDistributor);
 
-    const html = await ejs.renderFile(
+    const html = await ejsRenderFile(
       path.join(__dirname, "../views/summarypdf.ejs"),
       { getRetailer, getDistributor, getOrder }
     );
-    pdf.create(html).toBuffer((err, buffer) => {
-      const base64String = buffer.toString("base64");
+
+    // const buffer00 = await new Promise(async (resolve, reject) => {
+    //   const browser = puppeteer.launch({
+    //     headless: true,
+    //     executablePath: join(__dirname, 'node_modules', '.puppeteer_cache'),
+    //   })
+    //   const page = (await browser).newPage()
+    //   await page.setContent(html, { waitUntil: "networkidle0" });
+    //   const pdfBuffer = await page.pdf({
+    //     // path:'myPDF002.pdf',
+    //     format: 'A4',
+    //     // printBackground: true,
+    //   });
+    //   await browser.close();
+    //   resolve(pdfBuffer.buffer)
+    //   // pdf.create(html).toBuffer((err, buffer) => {
+    //   //   if (err) {
+    //   //     reject(err);
+    //   //   } else {
+    //   //     resolve(buffer);
+    //   //   }
+    //   // });
+    // });
+
+    html_to_pdf.generatePdf({ content: html }, { format: 'A4', printBackground: true }).then(pdfBuffer => {
+      const base64String = pdfBuffer.toString("base64");
+
       return res.status(200).json({
         status: "Success",
         message: "pdf create successFully",
         data: base64String,
       });
-    });
+    })
 
-    // var data = {
-    //   client: {
-    //     company: getRetailer.businessname,
-    //     address: getRetailer.address,
-    //     pin: getRetailer.pincode,
-    //     city: getRetailer.city,
-    //     gstno: getRetailer.gstno,
-    //   },
-    //   sender: {
-    //     distributorName: getDistributor.firstname + getDistributor.lastname,
-    //     area: getDistributor.area,
-    //     pin: getDistributor.pin,
-    //     city: getDistributor.city,
-    //     state: getDistributor.state,
-    //   },
+    // buffer00.then(buf => {
 
-    //   images: {
-    //     logo: "https://meddaily.s3.ap-south-1.amazonaws.com/MEDDAILY-LOGO-inverted.png",
-    //   },
-    //   products: getOrder.products,
-    //   bottomNotice: "Kindly pay your invoice within 15 days.",
-    //   settings: {
-    //     currency: "INR",
-    //   },
-    //   translate: {},
-    //   customize: {
-    //     // "template": fs.readFileSync('template.html', 'base64') // Must be base64 encoded html
-    //   },
-    // };
-    // console.log(data);
-    // return res.render('summarypdf',{getDistributor,getRetailer,getOrder})
-    // res.send({ status: true, message: "data fetched ", data: data });
+    //   const base64String = buf.toString("base64");
+
+    //   return res.status(200).json({
+    //     status: "Success",
+    //     message: "pdf create successFully",
+    //     data: base64String,
+    //   });
+    // })
+
+
   } catch (err) {
     console.log(err);
     res.send({ status: false, message: err.message, data: null });
