@@ -140,6 +140,8 @@ module.exports = (route) => {
   route.post("/uploadfiles", upload.uploadToS3, uploadController.uploadFiles);
   route.get("/product_search", DistributorController.product_search);
   route.post("/request_product", auth, ProductController.request_product);
+  route.get("/all_payout_request_distributor/:id", auth, DistributorController.all_payout_request);
+  // admin.get("/all_payout_request/:id", AdminController.all_payout_request);
   route.get(
     "/get_request_product",
     auth,

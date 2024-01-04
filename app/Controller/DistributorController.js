@@ -289,17 +289,41 @@ module.exports.distributor_approve = async (req, res) => {
     });
 };
 
+
+module.exports.all_payout_request = async (req, res) => {
+
+  const disId = req.user._id
+  if (req.params.id == "All") {
+    var obj = {distributor_id: disId};
+  } else {
+    var obj = { payment_status: req.params.id, distributor_id: disId };
+  }
+  console.log("?????????MMMMMMMMMMMMMMMMMMMMMM",obj );
+  await payout_transactions
+    .find(obj).populate('distributor_id')
+    .sort({ createdAt: -1 })
+    .then((item) => {
+      console.log("<<<<<<<<<<<<<<<", item);
+      res.send({ status: true, message: "success", data: item });
+    })
+    .catch((err) => {
+      console.log("??????????????", err);
+      res.send({ status: false, message: "fail", data: err });
+    });
+};
+
 module.exports.distributor_request = async (req, res) => {
   await Distributor.find(
     { verify: false },
-    { firstname: 1, lastname: 1, city: 1, area: 1, phonenumber: 1 }
-  )
+    { firstname: 1, lastname: 1, city: 1, area: 1, phonenumber: 1 ,distributorcode:1}
+    )
     .then((result) => {
       res.send({
         status: true,
         message: "Distributor Request List",
         data: result,
       });
+      console.log("resu",result);
     })
     .catch((err) => {
       res.send({ status: false, message: err });
@@ -378,12 +402,16 @@ module.exports.return_order_accept = async (req, res) => {
 const payout_transactions = require("../Models/payout_transaction");
 module.exports.create_payout = async (req, res) => {
   try {
+
+    console.log("???????????????", req.user._id);
     let getData = await payout.findOne({ distributor_id: req.user._id });
-    if (!getData || getData.length == 0) {
-      return res.send({ status: true, message: " not found" });
-    } else {
-      console.log(getData);
-      if (getData.amount >= req.body.amount) {
+    console.log("???????????????", getData);
+
+    // if (!getData || getData.length == 0) {
+    //   return res.send({ status: true, message: " not found" });
+    // } else {
+      console.log(req.body);
+      if (getData?.amount && getData?.amount >= req.body.amount) {
         getData.amount -= req.body.amount;
         let transactionObj = {
           amount: req.body.amount,
@@ -398,14 +426,33 @@ module.exports.create_payout = async (req, res) => {
           message: "transaction initiated ",
           data: transactionObj,
         });
-      } else {
+      } else if (getData == null) {
+        let transactionObj = {
+          amount: req.body.amount,
+          distributor_id: req.user._id,
+          remaining_balance: 50,
+        };
+        let pay ={
+          distributor_id: req.user._id,
+          amount: req.body.amount
+        }
+        let insert = new payout_transactions(transactionObj);
+        let getData = new payout(transactionObj);
+        await insert.save();
+        await getData.save();
+        return res.send({
+          status: true,
+          message: "transaction initiated ",
+          data: transactionObj,
+        });
+      } {
         return res.send({
           status: true,
           message: "Not enough balance",
           data: null,
         });
       }
-    }
+    // }
   } catch (err) {
     res.send({ status: false, message: err });
     console.log(err);
@@ -469,20 +516,23 @@ module.exports.create_invoice = async (req, res) => {
 
     // Find the order by order_id
     const getOrder = await Order.findOne({ order_id: order_id });
+    console.log("GRT",getOrder);
     if (!getOrder) throw new Error("Order not found");
 
     // Check order status
-    if (getOrder.order_status === 1 || getOrder.order_status === 3) {
-      return res.send({ status: true, message: "Order already completed" });
-    }
+    // if (getOrder.order_status === 1 || getOrder.order_status === 3) {
+    //   return res.send({ status: true, message: "Order already completed" });
+    // }
 
     for (const item of items) {
       const objectId = getOrder.distributor_id;
+      // console.log("OBJECTID",objectId);
       const idValue = objectId.valueOf();
-
+      // console.log("IDOF DIS",idValue);
       const productId = item._id;
+      // console.log("PRODUCT",productId);
       const quantity = item.quantity;
-
+      // console.log("QUNTITY",quantity);
       await Product.updateOne(
         {
           _id: productId,
@@ -490,11 +540,10 @@ module.exports.create_invoice = async (req, res) => {
         },
         {
           $inc: {
-            "distributors.$.stock": -parseInt(quantity)
+            "distributors.$.stock": -1 * parseInt(quantity)
           }
         }
       );
-
       const productInOrderIndex = getOrder.products.findIndex(product => product.id.toString() === productId);
 
       if (productInOrderIndex !== -1) {
@@ -816,9 +865,9 @@ module.exports.get_invoice = async (req, res) => {
 
     const getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
     const getDistributor = await Distributor.findOne({ _id: getOrder.distributor_id });
-    // console.log("RTEIL",getRetailer);
-    // console.log("DIS",getDistributor);
-    // console.log("PRODUCT",getOrder);
+    console.log("RTEIL",getRetailer);
+    console.log("DIS",getDistributor);
+    console.log("PRODUCT",getOrder);
 
     // return res.render('pdf',{getRetailer,getDistributor,getOrder})
 

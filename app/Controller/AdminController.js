@@ -221,8 +221,9 @@ module.exports.all_payout_request = async (req, res) => {
   } else {
     var obj = { payment_status: req.params.id };
   }
+  console.log("?????????MMMMMMMMMMMMMMMMMMMMMM",obj );
   await payout_transactions
-    .find(obj)
+    .find(obj).populate('distributor_id')
     .sort({ createdAt: -1 })
     .then((item) => {
       response.sendResponse(res, "success", item);
@@ -235,7 +236,7 @@ module.exports.all_payout_request = async (req, res) => {
 module.exports.accept_payout = async (req, res) => {
   const { payout_id } = req.body;
   await payout_transactions
-    .findOneAndUpdate({ _id: payout_id }, { $set: { payment_status: 1 } })
+    .findOneAndUpdate({ _id: payout_id }, { $set: { payment_status: 2 } })
     .then((result) => {
       console.log(result);
       res.send({ status: true, message: "payout success" });

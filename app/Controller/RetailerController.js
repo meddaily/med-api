@@ -15,6 +15,7 @@ const nodemailer = require('./nodemailer')
 const bcrypt = require("bcrypt");
 const { bucket } = require("../../firebase/firebase");
 const { v4: uuidv4 } = require('uuid');
+const payout = require("../Models/payout.js");
 // const fs = require('fs/promises')
 
 require("dotenv").config();
@@ -726,7 +727,7 @@ module.exports.checkout = async (req, res) => {
   try {
     let item = [];
     let distributorId;
-    console.log("body",req.body);
+    console.log("body", req.body);
 
 
     await Cart.find({ user_id: req.user._id }).then(async (cartdata) => {
@@ -748,9 +749,8 @@ module.exports.checkout = async (req, res) => {
           (pro) => pro.distributorId == cartdata[0].distributor_id
         );
 
-
+        console.log(product,'ProductDetail')
         var obje = {
-
           id: product._id,
           name: product.title,
           image: product.image,
@@ -758,7 +758,8 @@ module.exports.checkout = async (req, res) => {
           tax: product.applicable_tax,
           batch_no: "",
           exp_date: "",
-          quantity: cartdata[0].quantity,
+          // quantity: cartdata[0].quantity,
+          quantity: req.body.bonus_quantity,
         };
         item.push(obje);
       }
@@ -779,13 +780,23 @@ module.exports.checkout = async (req, res) => {
       payment_type: req.body.payment_type,
       bonus_quantity: req.body.bonus_quantity,
     };
-    await Order.create(obj)
-      .then((item) => {
-        res.send({ status: true, message: "order success", data: item });
-      })
-      .catch((err) => {
-        res.send({ status: true, message: err.message, data: null });
-      });
+
+    const order = await Order.create(obj);
+
+   await payout.findOneAndUpdate(
+      { distributor_id: distributorId },
+      { $inc: { amount: req.body.originalPrice } },
+      { upsert: true, new: true }
+    );
+    // await Payment.save();
+    res.send({ status: true, message: "order success", data:  order  });
+    // await Order.create(obj)
+    //   .then((item) => {
+    //     res.send({ status: true, message: "order success", data: item });
+    //   })
+    //   .catch((err) => {
+    //     res.send({ status: true, message: err.message, data: null });
+    //   });
   } catch (err) {
     console.log(err);
     res.send({ status: true, message: err.message, data: null });
@@ -820,12 +831,12 @@ module.exports.return_order = async (req, res) => {
       },
       { new: true }
     );
-    console.log("UPDATE",updatedOrder);
+    console.log("UPDATE", updatedOrder);
     if (updatedOrder) {
       const productIndices = updatedOrder.products.map((product) => {
         return req.body.items.findIndex((item) => product.id.toString() === item.id);
       });
-      console.log(">>>>>>>>>>>>>>>>>>>",productIndices);
+      console.log(">>>>>>>>>>>>>>>>>>>", productIndices);
       productIndices.forEach((index, i) => {
         if (index !== -1) {
           updatedOrder.products[index].return_quantity = req.body.items[i]?.quantity;
