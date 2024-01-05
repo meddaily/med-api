@@ -3,13 +3,13 @@ const mongoose = require('mongoose');
 var OfferSchema = mongoose.Schema(
   {
     image: String,
-    product_name: String,
+    // product_name: String,
     distributor_id: String,
     product_id: String,
     name: String,
     type: String,
-    activation_value: String,
-    bonus_quantity: String,
+    purchase_quantity: Number,
+    bonus_quantity: Number,
     time: { type: Number, default: Date.now },
   },
   {

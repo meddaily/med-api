@@ -29,7 +29,7 @@ module.exports = (admin) => {
 
   // offer
   admin.get("/getoffer", OfferController.getoffer);
-  admin.post("/addoffer", upload.uploadToS3, OfferController.addoffer);
+
   admin.get("/editoffer/:id", OfferController.editoffer);
   admin.post("/updateoffer", upload.uploadToS3, OfferController.updateoffer);
   admin.delete("/deleteoffer/:id", OfferController.deleteoffer);

@@ -1225,6 +1225,74 @@ module.exports.updatePassword = async (req, res, next) => {
 
 
 }
+
+
+// insert banner with admin panel
+module.exports.addoffer = async (req, resp) => {
+  try {
+    // Check if the offer already exists
+    let checkExist = await offer.findOne({
+      product_id: req.body.product_id,
+      distributor_id: req.user._id,
+    });
+    console.log("REQ",req.body);
+    console.log("CHECK",checkExist);
+    if (!checkExist) {
+      // // Upload image to the bucket
+      // const tempPath = 'tempfile.jpg';
+      // fs.writeFileSync(tempPath, Buffer.from(req.files[0].buffer));
+
+      // const imagePath = `${Date.now()}.png`;
+
+      // bucket.upload(tempPath, {
+      //   destination: `addofferImage/${imagePath}`,
+      //   metadata: {
+      //     contentType: 'image/png',
+      //     metadata: {
+      //       firebaseStorageDownloadToken: uuidv4(),
+      //     },
+      //   },
+      // }, async (err, file) => {
+      //   if (err) {
+      //     console.log("?>>>>>>>>>", err);
+      //     return resp.status(500).send({ status: false, message: "Internal Server Error" });
+      //   }
+
+      //   const [url] = await file.getSignedUrl({
+      //     action: 'read',
+      //     expires: '01-01-3000',
+      //   });
+
+        // Create the offer object
+        var obj = {
+          // name: req.body.name,
+          // product_name: req.body.product_name,
+          product_id: req.body.product_id,
+          distributor_id: req.user._id,
+          // image: url, // Use the correct URL obtained from the file upload
+          type: req.body.type,
+          value: req.body.type,
+          purchase_quantity: req.body.purchase_quantity,
+          bonus_quantity: req.body.bonus_quantity,
+        };
+
+        // Create the offer in the database
+        offer.create(obj)
+          .then((item) => {
+            resp.send({ status: true, message: "Offer created successfully", data: item })
+          })
+          .catch((err) => {
+            resp.send({ status: false, message: "Something Went Worng", data: err })
+          });
+      // });
+    } else {
+      resp.send({ status: false, message: "Offer already exists", data: null })
+    }
+  } catch (error) {
+    // Handle any errors that occur during the process
+    resp.send({ status: false, message: "Internal Server Error" })
+  }
+};
 // <<<<<<------------------------------Mongo services ------------------------------------------->>>
 
 

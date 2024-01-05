@@ -19,71 +19,7 @@ var upload = multer({
 });
 
 
-// insert banner with admin panel
-module.exports.addoffer = async (req, resp) => {
-  try {
-    // Check if the offer already exists
-    let checkExist = await offer.findOne({
-      product_id: req.body.product_id,
-      distributor_id: req.body.distributor_id,
-    });
 
-    if (!checkExist) {
-      // Upload image to the bucket
-      const tempPath = 'tempfile.jpg';
-      fs.writeFileSync(tempPath, Buffer.from(req.files[0].buffer));
-
-      const imagePath = `${Date.now()}.png`;
-
-      bucket.upload(tempPath, {
-        destination: `addofferImage/${imagePath}`,
-        metadata: {
-          contentType: 'image/png',
-          metadata: {
-            firebaseStorageDownloadToken: uuidv4(),
-          },
-        },
-      }, async (err, file) => {
-        if (err) {
-          console.log("?>>>>>>>>>", err);
-          return resp.status(500).send({ status: false, message: "Internal Server Error" });
-        }
-
-        const [url] = await file.getSignedUrl({
-          action: 'read',
-          expires: '01-01-3000',
-        });
-
-        // Create the offer object
-        var obj = {
-          name: req.body.name,
-          product_name: req.body.product_name,
-          product_id: req.body.product_id,
-          distributor_id: req.body.distributor_id,
-          image: url, // Use the correct URL obtained from the file upload
-          type: req.body.type,
-          value: req.body.type,
-          activation_value: req.body.activation_value,
-          bonus_quantity: req.body.bonus_quantity,
-        };
-
-        // Create the offer in the database
-        offer.create(obj)
-          .then((item) => {
-            response.senddataResponse(resp, true, item, "Offer created successfully");
-          })
-          .catch((err) => {
-            response.sendResponse(resp, false, err);
-          });
-      });
-    } else {
-      response.senddataResponse(resp, false, null, "Offer already exists");
-    }
-  } catch (error) {
-    // Handle any errors that occur during the process
-    resp.status(500).send({ status: false, message: "Internal Server Error" });
-  }
-};
 
 
 // get banner for admin

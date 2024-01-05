@@ -167,4 +167,8 @@ module.exports = (route) => {
 
   route.post('/forgot_password' , RetailerController.forGotPassword)
   route.post('/update_password' , RetailerController.updatePassword)
+
+  //offers
+  route.post("/addoffer", auth, RetailerController.addoffer);
+  // admin.post("/addoffer", upload.uploadToS3, OfferController.addoffer);
 };
