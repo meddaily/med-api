@@ -4,8 +4,8 @@ var OfferSchema = mongoose.Schema(
   {
     image: String,
     // product_name: String,
-    distributor_id: String,
-    product_id: String,
+    distributors: { type: mongoose.Schema.Types.ObjectId, ref: 'distributor' },
+    products: { type: mongoose.Schema.Types.ObjectId, ref: 'product' },
     name: String,
     type: String,
     purchase_quantity: Number,

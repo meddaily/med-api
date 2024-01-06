@@ -28,14 +28,14 @@ module.exports.getoffer = async (req, resp) => {
   console.log(req.query);
   if (req.query.distributor_id && req.query.product_id) {
     obj = {
-      distributor_id: req.query.distributor_id,
-      product_id: req.query.product_id,
+      distributors: req.query.distributor_id,
+      products: req.query.product_id,
     };
   } else {
     obj = {};
   }
   offer
-    .find(obj)
+    .find(obj).populate('distributors').populate('products') 
     .then((data) => {
       if (!data || data.length == 0) {
         response.sendResponse(resp, false, "Sorry, offer not found.");

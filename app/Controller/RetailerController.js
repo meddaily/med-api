@@ -16,6 +16,7 @@ const bcrypt = require("bcrypt");
 const { bucket } = require("../../firebase/firebase");
 const { v4: uuidv4 } = require('uuid');
 const payout = require("../Models/payout.js");
+const mongoose = require('mongoose');
 // const fs = require('fs/promises')
 
 require("dotenv").config();
@@ -1232,8 +1233,8 @@ module.exports.addoffer = async (req, resp) => {
   try {
     // Check if the offer already exists
     let checkExist = await offer.findOne({
-      product_id: req.body.product_id,
-      distributor_id: req.user._id,
+      products: mongoose.Types.ObjectId(req.body.product_id),
+      distributors: mongoose.Types.ObjectId(req.user._id),
     });
     console.log("REQ",req.body);
     console.log("CHECK",checkExist);
@@ -1267,14 +1268,15 @@ module.exports.addoffer = async (req, resp) => {
         var obj = {
           // name: req.body.name,
           // product_name: req.body.product_name,
-          product_id: req.body.product_id,
-          distributor_id: req.user._id,
+          products: mongoose.Types.ObjectId(req.body.product_id),
+          distributors:  mongoose.Types.ObjectId(req.user._id),
           // image: url, // Use the correct URL obtained from the file upload
           type: req.body.type,
           value: req.body.type,
           purchase_quantity: req.body.purchase_quantity,
           bonus_quantity: req.body.bonus_quantity,
         };
+
 
         // Create the offer in the database
         offer.create(obj)
