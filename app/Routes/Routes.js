@@ -170,6 +170,6 @@ module.exports = (route) => {
 
   //offers
   route.post("/addoffer", auth, RetailerController.addoffer);
-  route.get("/inventory_download",auth,DistributorController.inventory_download)
+  route.get("/get_my_inventory",auth,DistributorController.inventory_download)
   // admin.post("/addoffer", upload.uploadToS3, OfferController.addoffer);
 };

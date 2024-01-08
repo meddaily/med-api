@@ -1382,19 +1382,25 @@ module.exports.inventory_download = async (req, res) => {
       worksheet.columns = [
         { header: 'Id', key: '_id', width: 40 },
         { header: 'Product Name', key: 'name', width: 40 },
-        { header: 'Subtitle', key: 'subtitle', width: 40 },
+        { header: 'Subtitle', key: 'subtitle', width: 70 },
+        { header: 'Price',  width: 40 },
+        { header: 'Stoke', width: 40 },
       ];
       // console.log("Worksheet columns", worksheet.columns);
 
       worksheet.addRows(responseData);
       // console.log("Response data", responseData[0]._id);
 
+      // Example Content-Type header in the server response
+      // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=MyInventory.xlsx');
+
+
+      res.setHeader('Content-Disposition', 'inline; filename=MyInventory.xlsx');
       const excelBuffer = await workbook.xlsx.writeBuffer();
       // console.log("new", excelBuffer);
-      // res.end(excelBuffer);
-      return res.status(200).json({ status: true, message: 'Success', data: excelBuffer });
+      res.end(excelBuffer);
     } else {
       console.log('No matching document found.');
       return res.status(404).json({ status: true, message: 'empty' });
