@@ -15,6 +15,7 @@ const { v4: uuidv4 } = require('uuid');
 const html_to_pdf = require('html-pdf-node');
 const path = require("path");
 const ejs = require("ejs");
+const ExcelJS = require('exceljs');
 const { ObjectId } = require('mongodb');
 
 // login function
@@ -294,11 +295,11 @@ module.exports.all_payout_request = async (req, res) => {
 
   const disId = req.user._id
   if (req.params.id == "All") {
-    var obj = {distributor_id: disId};
+    var obj = { distributor_id: disId };
   } else {
     var obj = { payment_status: req.params.id, distributor_id: disId };
   }
-  console.log("?????????MMMMMMMMMMMMMMMMMMMMMM",obj );
+  console.log("?????????MMMMMMMMMMMMMMMMMMMMMM", obj);
   await payout_transactions
     .find(obj).populate('distributor_id')
     .sort({ createdAt: -1 })
@@ -315,15 +316,15 @@ module.exports.all_payout_request = async (req, res) => {
 module.exports.distributor_request = async (req, res) => {
   await Distributor.find(
     { verify: false },
-    { firstname: 1, lastname: 1, city: 1, area: 1, phonenumber: 1 ,distributorcode:1}
-    )
+    { firstname: 1, lastname: 1, city: 1, area: 1, phonenumber: 1, distributorcode: 1 }
+  )
     .then((result) => {
       res.send({
         status: true,
         message: "Distributor Request List",
         data: result,
       });
-      console.log("resu",result);
+      console.log("resu", result);
     })
     .catch((err) => {
       res.send({ status: false, message: err });
@@ -410,48 +411,48 @@ module.exports.create_payout = async (req, res) => {
     // if (!getData || getData.length == 0) {
     //   return res.send({ status: true, message: " not found" });
     // } else {
-      console.log(req.body);
-      if (getData?.amount && getData?.amount >= req.body.amount) {
-        getData.amount -= req.body.amount;
-        let transactionObj = {
-          amount: req.body.amount,
-          distributor_id: req.user._id,
-          remaining_balance: getData.amount,
-        };
-        let insert = new payout_transactions(transactionObj);
-        await insert.save();
-        await getData.save();
-        return res.send({
-          status: true,
-          message: "transaction initiated ",
-          data: transactionObj,
-        });
-      } else if (getData == null) {
-        let transactionObj = {
-          amount: req.body.amount,
-          distributor_id: req.user._id,
-          remaining_balance: 50,
-        };
-        let pay ={
-          distributor_id: req.user._id,
-          amount: req.body.amount
-        }
-        let insert = new payout_transactions(transactionObj);
-        let getData = new payout(transactionObj);
-        await insert.save();
-        await getData.save();
-        return res.send({
-          status: true,
-          message: "transaction initiated ",
-          data: transactionObj,
-        });
-      } {
-        return res.send({
-          status: true,
-          message: "Not enough balance",
-          data: null,
-        });
+    console.log(req.body);
+    if (getData?.amount && getData?.amount >= req.body.amount) {
+      getData.amount -= req.body.amount;
+      let transactionObj = {
+        amount: req.body.amount,
+        distributor_id: req.user._id,
+        remaining_balance: getData.amount,
+      };
+      let insert = new payout_transactions(transactionObj);
+      await insert.save();
+      await getData.save();
+      return res.send({
+        status: true,
+        message: "transaction initiated ",
+        data: transactionObj,
+      });
+    } else if (getData == null) {
+      let transactionObj = {
+        amount: req.body.amount,
+        distributor_id: req.user._id,
+        remaining_balance: 50,
+      };
+      let pay = {
+        distributor_id: req.user._id,
+        amount: req.body.amount
       }
+      let insert = new payout_transactions(transactionObj);
+      let getData = new payout(transactionObj);
+      await insert.save();
+      await getData.save();
+      return res.send({
+        status: true,
+        message: "transaction initiated ",
+        data: transactionObj,
+      });
+    } {
+      return res.send({
+        status: true,
+        message: "Not enough balance",
+        data: null,
+      });
+    }
     // }
   } catch (err) {
     res.send({ status: false, message: err });
@@ -516,7 +517,7 @@ module.exports.create_invoice = async (req, res) => {
 
     // Find the order by order_id
     const getOrder = await Order.findOne({ order_id: order_id });
-    console.log("GRT",getOrder);
+    console.log("GRT", getOrder);
     if (!getOrder) throw new Error("Order not found");
 
     // Check order status
@@ -865,9 +866,9 @@ module.exports.get_invoice = async (req, res) => {
 
     const getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
     const getDistributor = await Distributor.findOne({ _id: getOrder.distributor_id });
-    console.log("RTEIL",getRetailer);
-    console.log("DIS",getDistributor);
-    console.log("PRODUCT",getOrder);
+    console.log("RTEIL", getRetailer);
+    console.log("DIS", getDistributor);
+    console.log("PRODUCT", getOrder);
 
     // return res.render('pdf',{getRetailer,getDistributor,getOrder})
 
@@ -1111,6 +1112,7 @@ module.exports.get_invoice = async (req, res) => {
 // };
 
 const util = require('util');
+const { log } = require("console");
 const ejsRenderFile = util.promisify(ejs.renderFile);
 
 module.exports.get_summary = async (req, res) => {
@@ -1310,7 +1312,7 @@ module.exports.distributor_get_product_retailer = async (req, res) => {
   }
 };
 
-exports.distributor_reject = async (req, res) => {
+module.exports.distributor_reject = async (req, res) => {
   const distributorId = req.body.id;
   console.log("???????????????????????????????????????", distributorId);
 
@@ -1335,5 +1337,74 @@ exports.distributor_reject = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to reject distributor.' });
   }
 };
+
+module.exports.inventory_download = async (req, res) => {
+  const distributorId = req.user._id;
+  console.log("IDS>>>>>>>>>>>>>>", distributorId);
+  try {
+    const results = await Product.aggregate([
+      { $match: { "distributors.distributorId": distributorId } },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          sub_title: 1,
+          distributors: {
+            $filter: {
+              input: "$distributors",
+              as: "distributor",
+              cond: { $eq: ["$$distributor.distributorId", distributorId] },
+            },
+          },
+        },
+      },
+      { $unwind: "$distributors" },
+      {
+        $project: {
+          _id: "$_id",
+          name: "$title",
+          subtitle: "$sub_title",
+        },
+      },
+    ]);
+    if (results.length > 0) {
+      const responseData = results.map(item => ({
+        _id: item._id.toString(),
+        name: item.name,
+        subtitle: item.subtitle,
+      }));
+      // console.log("RESULT", results._id);
+
+      const workbook = new ExcelJS.Workbook();
+      // console.log("Workbook created successfully");
+      const worksheet = workbook.addWorksheet('MyInventory');
+
+      worksheet.columns = [
+        { header: 'Id', key: '_id', width: 40 },
+        { header: 'Product Name', key: 'name', width: 40 },
+        { header: 'Subtitle', key: 'subtitle', width: 40 },
+      ];
+      // console.log("Worksheet columns", worksheet.columns);
+
+      worksheet.addRows(responseData);
+      // console.log("Response data", responseData[0]._id);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=MyInventory.xlsx');
+      const excelBuffer = await workbook.xlsx.writeBuffer();
+      // console.log("new", excelBuffer);
+      // res.end(excelBuffer);
+      return res.status(200).json({ status: true, message: 'Success', data: excelBuffer });
+    } else {
+      console.log('No matching document found.');
+      return res.status(404).json({ status: true, message: 'empty' });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+
 
 // <<<<<<------------------------------Mongo services ------------------------------------------->>>
