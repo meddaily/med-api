@@ -5,6 +5,7 @@ const mongodb = require("mongodb");
 const fs = require("fs");
 const multer = require("multer");
 const Product_req = require("../Models/request");
+const ExcelJS = require('exceljs');
 
 var upload = multer({
   storage: multer.diskStorage({
@@ -59,6 +60,43 @@ module.exports.getproduct = async (req, resp) => {
     .catch((err) => {
       response.sendResponse(resp, false, err);
     });
+};
+
+module.exports.inventory_download = async (req, res) => {
+  try {
+    const data = await Product.find();
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ status: false, message: "Sorry, Product not found." });
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Products');
+
+    // Add header row
+    worksheet.addRow(['Product Name', 'MNF Name', 'Description', 'Applicable tax']);
+
+    // Add data rows
+    // data.forEach(product => {
+    //   worksheet.addRow([product.title, product.sub_title, product.category_id]);
+    // });
+
+    worksheet.columns.forEach(column => {
+      column.width = 50;
+    });
+
+    // Set response headers for Excel download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=products.xlsx');
+
+    // Send the workbook as a response
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
 };
 
 // edit banner  show data in panel
@@ -235,11 +273,12 @@ const { join } = require("path");
 const Category = require("../Models/Category");
 const Distributor = require("../Models/Distributor");
 const { setUncaughtExceptionCaptureCallback } = require("process");
+
 module.exports.bulk_upload = async (req, res) => {
   try {
     // filePath = req.file.path;
-    console.log(req.body,'Body')
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",req.files);
+    console.log(req.body, 'Body')
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", req.files);
     fileBuffer = req?.files[0]?.buffer;
     const filePath = `bulkCSV${Date.now}.xlsx`;
     fs.writeFileSync(filePath, fileBuffer);
@@ -251,13 +290,17 @@ module.exports.bulk_upload = async (req, res) => {
     const worksheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[worksheetName];
 
-    // Convert the worksheet to JSON format
     const jsonData = await XLSX.utils.sheet_to_json(worksheet);
     let findCategory = await category.findById(req.body.category_id);
-    console.log(findCategory);
+    // console.log(jsonData, "DATA");
     let promiseArray = jsonData.map(async (e) => {
-      e.category_id = findCategory._id;
-      await addData(e);
+      await addData({
+        title: e['Product Name'],
+        sub_title: e['MNF Name'],
+        description: e['Description'],
+        applicable_tax: e['Applicable tax'],
+        category_id: findCategory._id
+      });
     });
     fs.unlinkSync(filePath);
     await Promise.all(promiseArray);
@@ -281,6 +324,7 @@ let addData = async (data) => {
     }
   });
 };
+
 
 module.exports.searchProduct = async (req, res) => {
   try {
@@ -375,7 +419,6 @@ module.exports.get_request_product = async (req, res) => {
 
 
 
-  // <<<<<--------------------------- mongo services -------------------------->>>>>>>>>>>>>>>>>>>>>>>>>
+// <<<<<--------------------------- mongo services -------------------------->>>>>>>>>>>>>>>>>>>>>>>>>
 
- 
- 
+
