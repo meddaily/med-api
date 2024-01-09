@@ -757,12 +757,13 @@ module.exports.bulkUpdate = async (req, res) => {
     // Print the JSON data
     console.log("jsonDataas", jsonData);
     for (let e of jsonData) {
-      const productId = e._id;
+      const productId = e.Id;
+      console.log("IDs",e.Id);
       // const productId = e.product_id;
       const newPrice = parseInt(e.price);
       const newStock = parseInt(e.stock);
 
-      Product.updateOne(
+     const dataproduct= Product.updateOne(
         {
           "distributors.distributorId": req.user._id,
           _id: productId,
@@ -774,9 +775,11 @@ module.exports.bulkUpdate = async (req, res) => {
           },
         }
       )
-        .then((data) => {
-
-          console.log("Price and stock values updated successfully.", data);
+        .then(() => {
+          // console.log(">>>>>>>>>",dataproduct);
+          // console.log("IDDISTRIBUTOR",req.user._id);
+          // console.log("ID",productId);
+          console.log("Price and stock values updated successfully.");
         })
         .catch((error) => {
           fs.unlinkSync(filePath);
@@ -1383,9 +1386,9 @@ module.exports.inventory_download = async (req, res) => {
         { header: 'Id', key: '_id', width: 40 },
         { header: 'Product Name', key: 'name', width: 40 },
         { header: 'Subtitle', key: 'subtitle', width: 70 },
-        { header: 'Price',  width: 40 },
-        { header: 'Stoke', width: 40 },
-      ];
+        { header: 'price', key:'price', width: 40 },
+        { header: 'stock', key:'stoke',width: 40 },
+      ]; 
       // console.log("Worksheet columns", worksheet.columns);
 
       worksheet.addRows(responseData);
