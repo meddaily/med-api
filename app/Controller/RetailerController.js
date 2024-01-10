@@ -63,9 +63,7 @@ module.exports.retailer_register = async (req, resp) => {
       return resp.send({ status: false, message: "Retailer already exist" });
     }
 
-
     var data = req.body;
-
 
     const gstCertificateImage = req.files.find(
       (file) => file.fieldname === "RetailerGSTCertificateImage"
@@ -497,7 +495,7 @@ module.exports.get_product = async (req, res) => {
 
 module.exports.product_details = async (req, res) => {
   var retailer = await Retailer.findOne({ _id: req.user._id });
-  var retailercity = retailer.city;
+  var retailercity = retailer?.city;
   var distributor = await Distributor.find({ city: retailercity });
   var distributor_id = [];
   var distributor_data = [];
@@ -525,7 +523,7 @@ module.exports.product_details = async (req, res) => {
 
   res.send({
     product: pro,
-    distributor: pro?.distributors,
+    // distributor: pro?.distributors,
     status: true,
     message: "Product data show successfull",
   });
