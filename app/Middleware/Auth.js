@@ -6,7 +6,7 @@ const verifyToken = async (req, resp, next) => {
   // console.log("FILES");
 
   if (!token) {
-    resp.send({
+   return resp.send({
       status: false,
       message: "A token is required for authentication",
     });
@@ -16,6 +16,7 @@ const verifyToken = async (req, resp, next) => {
     var checkToken = await tokendb.findOne({ token: token });
    
     if (checkToken) {
+      // console.log(checkToken,'Checktoken')
       const verify = jwt.verify(checkToken.token, process.env.JWT_KEY);
       req.user = verify.user_id;
 
@@ -25,7 +26,7 @@ const verifyToken = async (req, resp, next) => {
     }
   } catch (err) {
     console.log(err);
-    // resp.send({ status: false, message: "Invalid Token" });
+    return resp.send({ status: false, message: "Invalid Token" });
   }
 };
 

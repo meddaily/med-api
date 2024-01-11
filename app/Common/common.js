@@ -8,6 +8,7 @@ module.exports = function generateUsertoken(id){
     return jwt.sign(
          { user_id: id },
          process.env.JWT_KEY,
+         {expiresIn:'1h'}
        );
  }
 

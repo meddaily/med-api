@@ -44,7 +44,7 @@ exports.login = async (req, res) => {
       } else {
         check.comparePassword(password, function (err, isMatch) {
           var token = jwt.sign({ user_id: check._id }, "Secret", {
-            expiresIn: "2h",
+            expiresIn: "1h",
           });
           if (isMatch === true) {
             return res.send({

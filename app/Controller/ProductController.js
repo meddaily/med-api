@@ -249,7 +249,7 @@ module.exports.update_inventory = async (req, res) => {
     { _id: productId },
     {
       $set: {
-        distributors: old_des.distributors,
+        distributors: old_des?.distributors,
       },
     },
     {
