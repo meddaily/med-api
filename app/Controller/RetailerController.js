@@ -542,12 +542,12 @@ module.exports.add_to_cart = async (req, res) => {
           message: "Item already in cart",
         });
       }
-      else if (cartdata.distributor_id != req.body.distributor_id) {
-        return res.send({
-          status: false,
-          message: "You can order one distributor at one time",
-        });
-      }
+      // else if (cartdata.distributor_id != req.body.distributor_id) {
+      //   return res.send({
+      //     status: false,
+      //     message: "You can order one distributor at one time",
+      //   });
+      // }
       else {
         var obj = {
           user_id: req.user._id,
@@ -595,7 +595,7 @@ module.exports.get_cart = async (req, res) => {
       var arr = [];
       for (var i = 0; i < item.length; i++) {
         // console.log("Entering ther loop");
-        var product = await Product.findOne({ _id: item[i].product_id }).catch((err) => {
+        var product = await Product.findById( item[i].product_id ).catch((err) => {
           console.error("Error fetching product:", err);
         });
         console.log("PRODUCT", product);
@@ -616,7 +616,7 @@ module.exports.get_cart = async (req, res) => {
         arr.push(obj);
         console.log("object xoxoxo", obj);
       }
-      res.send({
+    return res.send({
         status: true,
         data: arr,
         message: "cart data show successfully",
@@ -624,7 +624,7 @@ module.exports.get_cart = async (req, res) => {
     })
     .catch((err) => {
       console.log(err)
-      res.send({
+     return res.send({
         status: false,
         message: err,
       });
@@ -655,13 +655,13 @@ module.exports.update_cart = async (req, res) => {
 module.exports.delete_cart = async (req, res) => {
   await Cart.findOneAndDelete({ _id: req.body.cart_id })
     .then((result) => {
-      res.send({
+     return res.send({
         status: true,
         message: "cart data delete successfull",
       });
     })
     .catch((err) => {
-      res.send({
+      return res.send({
         status: false,
         message: err,
       });
