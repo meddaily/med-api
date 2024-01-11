@@ -39,8 +39,10 @@ module.exports.getoffer = async (req, resp) => {
     .then((data) => {
       if (!data || data.length == 0) {
         response.sendResponse(resp, false, "Sorry, offer not found.");
+      }else{ 
+        response.senddataResponse(resp, data, true, "offer show Successfully.");
       }
-      response.senddataResponse(resp, data, true, "offer show Successfully.");
+     
     })
     .catch((err) => {
       response.sendResponse(resp, false, err);
