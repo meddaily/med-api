@@ -592,12 +592,7 @@ module.exports.get_cart = async (req, res) => {
   Cart.find({ user_id: req.user._id })
     .then(async (item) => {
       console.log("cart values", item); // Log the fetched items
-      if(item){
-        return res.send({
-          status: false,
-          message: "Cart Is Empty",
-        });
-      }
+    
       var arr = [];
       for (var i = 0; i < item.length; i++) {
         // console.log("Entering ther loop");
