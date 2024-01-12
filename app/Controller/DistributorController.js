@@ -387,9 +387,31 @@ module.exports.return_order_accept = async (req, res) => {
   if (getOrder?.return_status == 2) {
     return res.send({ status: false, message: "Already accepted" });
   }
+
+  console.log("order>>>>>>>>>>>>>",getOrder);
+
+  const items = getOrder.products;
+  console.log("ITEM",items);
+  for (const item of items) {
+    const productId = item.id;
+    const quantity = item.return_quantity;
+    const distributorId = req.user._id; 
+
+    await Product.updateOne(
+      {
+        _id: productId,
+        "distributors.distributorId": distributorId
+      },
+      {
+        $inc: {
+          "distributors.$.stock": 1 * parseInt(quantity)
+        }
+      }
+    );
+  }
   await Order.updateOne({ order_id: id }, { return_status: 2 }, { new: true })
     .then((result) => {
-      res.send({
+      return res.send({
         status: true,
         message: "order return accepted",
         data: result,
@@ -400,6 +422,7 @@ module.exports.return_order_accept = async (req, res) => {
       console.log(err);
     });
 };
+
 const payout_transactions = require("../Models/payout_transaction");
 module.exports.create_payout = async (req, res) => {
   try {

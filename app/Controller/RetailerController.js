@@ -592,6 +592,12 @@ module.exports.get_cart = async (req, res) => {
   Cart.find({ user_id: req.user._id })
     .then(async (item) => {
       console.log("cart values", item); // Log the fetched items
+      if(item){
+        return res.send({
+          status: false,
+          message: "Cart Is Empty",
+        });
+      }
       var arr = [];
       for (var i = 0; i < item.length; i++) {
         // console.log("Entering ther loop");
@@ -609,7 +615,7 @@ module.exports.get_cart = async (req, res) => {
           product_name: product?.title,
           distributor_name: dis[i]?.fristname,
           distributor_id: dis[i]?.distributorId,
-          price: dis[i]?.price,
+          price: dis[0]?.price,
           quantity: item[i]?.quantity,
           product: product
         };
@@ -961,6 +967,12 @@ module.exports.order_details = async (req, res) => {
   try {
     await Order.find({ order_id: req.query.order_id })
       .then(async (result) => {
+        if (result.length === 0) {
+         return res.send({
+            status: false,
+            message: "Order Not Found",
+          });
+        }
         let totalAmount = 0;
         let getProductTax;
         result[0].products.map(async (e) => {
