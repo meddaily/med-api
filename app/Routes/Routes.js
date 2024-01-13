@@ -132,6 +132,11 @@ module.exports = (route) => {
     auth,
     DistributorController.return_order_accept
   );
+  route.post(
+    "/return_order_reject",
+    auth,
+    DistributorController.return_order_reject
+  );
   route.post("/create_payout", auth, DistributorController.create_payout);
 
   //logout api

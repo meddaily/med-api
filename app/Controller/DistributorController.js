@@ -423,6 +423,25 @@ module.exports.return_order_accept = async (req, res) => {
     });
 };
 
+module.exports.return_order_reject = async (req, res) => {
+  try {
+    const id = req.body.order_id;
+    console.log("id", id);
+    const updatedOrderId = id.replace('RETURN', '');
+    const result = await Order.updateOne({ order_id: id }, { $set: { order_id: updatedOrderId, status: 'rejected' } });
+    console.log("idupdate", updatedOrderId);
+    return res.send({
+      status: true,
+      message: "order return rejected",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    res.send({ status: false, message: err });
+    console.log(err);
+  }
+};
+
 const payout_transactions = require("../Models/payout_transaction");
 module.exports.create_payout = async (req, res) => {
   try {
@@ -1148,62 +1167,40 @@ module.exports.get_summary = async (req, res) => {
     if (!getOrder || getOrder.length == 0) {
       return res.send({ status: false, messsage: "Order not found" });
     }
-
     let getRetailer = await Retailer.findOne({ _id: getOrder.retailer_id });
     let getDistributor = await Distributor.findOne({
       _id: getOrder.distributor_id,
     });
-
+    // console.log(">>>>>>>>>>>>>>>>>>", getOrder);
+    let totalTax = 0;
+    let deliveryCharge;
+    let deliveryTax;
+    if (getOrder.delivery_fee === true) {
+      deliveryCharge = 100;
+      deliveryTax = 18;
+    } else {
+      deliveryCharge = 0;
+      deliveryTax = 0;
+    }
+    for (const product of getOrder.products) {
+      const { quantity, price, tax } = product;
+      const productTotal = quantity * price;
+      const productTax = (productTotal * tax) / 100;
+      totalTax += productTax;
+    }
+    const mainTotal = totalTax + deliveryCharge + deliveryTax;
     const html = await ejsRenderFile(
       path.join(__dirname, "../views/summarypdf.ejs"),
-      { getRetailer, getDistributor, getOrder }
+      { getRetailer, getDistributor, getOrder, totalTax, deliveryCharge, deliveryTax,mainTotal }
     );
-
-    // const buffer00 = await new Promise(async (resolve, reject) => {
-    //   const browser = puppeteer.launch({
-    //     headless: true,
-    //     executablePath: join(__dirname, 'node_modules', '.puppeteer_cache'),
-    //   })
-    //   const page = (await browser).newPage()
-    //   await page.setContent(html, { waitUntil: "networkidle0" });
-    //   const pdfBuffer = await page.pdf({
-    //     // path:'myPDF002.pdf',
-    //     format: 'A4',
-    //     // printBackground: true,
-    //   });
-    //   await browser.close();
-    //   resolve(pdfBuffer.buffer)
-    //   // pdf.create(html).toBuffer((err, buffer) => {
-    //   //   if (err) {
-    //   //     reject(err);
-    //   //   } else {
-    //   //     resolve(buffer);
-    //   //   }
-    //   // });
-    // });
-
     html_to_pdf.generatePdf({ content: html }, { format: 'A4', printBackground: true }).then(pdfBuffer => {
       const base64String = pdfBuffer.toString("base64");
-
       return res.status(200).json({
         status: "Success",
         message: "pdf create successFully",
         data: base64String,
       });
-    })
-
-    // buffer00.then(buf => {
-
-    //   const base64String = buf.toString("base64");
-
-    //   return res.status(200).json({
-    //     status: "Success",
-    //     message: "pdf create successFully",
-    //     data: base64String,
-    //   });
-    // })
-
-
+    });
   } catch (err) {
     console.log(err);
     res.send({ status: false, message: err.message, data: null });

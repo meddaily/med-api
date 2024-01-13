@@ -457,8 +457,13 @@ module.exports.get_product = async (req, res) => {
   distributor.map((id) => {
     distributor_id.push(id._id.toString());
   });
+  let pro;
+  if (req.query.type === "latest") {
+    pro = await Product.find({}).sort({ createdAt: -1 })
+  } else {
+    pro = await Product.find({})
+  }
 
-  var pro = await Product.find({});
 
   pro.map((item) => {
     if (item.distributors.length > 0) {
@@ -592,11 +597,11 @@ module.exports.get_cart = async (req, res) => {
   Cart.find({ user_id: req.user._id })
     .then(async (item) => {
       console.log("cart values", item); // Log the fetched items
-    
+
       var arr = [];
       for (var i = 0; i < item.length; i++) {
         // console.log("Entering ther loop");
-        var product = await Product.findById( item[i].product_id ).catch((err) => {
+        var product = await Product.findById(item[i].product_id).catch((err) => {
           console.error("Error fetching product:", err);
         });
         console.log("PRODUCT", product);
@@ -617,7 +622,7 @@ module.exports.get_cart = async (req, res) => {
         arr.push(obj);
         console.log("object xoxoxo", obj);
       }
-    return res.send({
+      return res.send({
         status: true,
         data: arr,
         message: "cart data show successfully",
@@ -625,7 +630,7 @@ module.exports.get_cart = async (req, res) => {
     })
     .catch((err) => {
       console.log(err)
-     return res.send({
+      return res.send({
         status: false,
         message: err,
       });
@@ -656,7 +661,7 @@ module.exports.update_cart = async (req, res) => {
 module.exports.delete_cart = async (req, res) => {
   await Cart.findOneAndDelete({ _id: req.body.cart_id })
     .then((result) => {
-     return res.send({
+      return res.send({
         status: true,
         message: "cart data delete successfull",
       });
@@ -749,7 +754,7 @@ module.exports.checkout = async (req, res) => {
           (pro) => pro.distributorId == cartdata[0].distributor_id
         );
 
-        console.log(product,'ProductDetail')
+        console.log(product, 'ProductDetail')
         var obje = {
           id: product._id,
           name: product.title,
@@ -779,17 +784,18 @@ module.exports.checkout = async (req, res) => {
       products: item,
       payment_type: req.body.payment_type,
       bonus_quantity: req.body.bonus_quantity,
+      delivery_fee: req.body.delivery_fee
     };
 
     const order = await Order.create(obj);
 
-   await payout.findOneAndUpdate(
+    await payout.findOneAndUpdate(
       { distributor_id: distributorId },
       { $inc: { amount: req.body.originalPrice } },
       { upsert: true, new: true }
     );
     // await Payment.save();
-    res.send({ status: true, message: "order success", data:  order  });
+    res.send({ status: true, message: "order success", data: order });
     // await Order.create(obj)
     //   .then((item) => {
     //     res.send({ status: true, message: "order success", data: item });
@@ -827,6 +833,7 @@ module.exports.return_order = async (req, res) => {
         return_status: 1,
         return_reason: req.body.reason,
         return_message: req.body.message,
+        order_status: 5,
         // return_image: req.body.url,
       },
       { new: true }
@@ -963,7 +970,7 @@ module.exports.order_details = async (req, res) => {
     await Order.find({ order_id: req.query.order_id })
       .then(async (result) => {
         if (result.length === 0) {
-         return res.send({
+          return res.send({
             status: false,
             message: "Order Not Found",
           });
@@ -1241,8 +1248,8 @@ module.exports.addoffer = async (req, resp) => {
       products: mongoose.Types.ObjectId(req.body.product_id),
       distributors: mongoose.Types.ObjectId(req.user._id),
     });
-    console.log("REQ",req.body);
-    console.log("CHECK",checkExist);
+    console.log("REQ", req.body);
+    console.log("CHECK", checkExist);
     if (!checkExist) {
       // // Upload image to the bucket
       // const tempPath = 'tempfile.jpg';
@@ -1269,28 +1276,28 @@ module.exports.addoffer = async (req, resp) => {
       //     expires: '01-01-3000',
       //   });
 
-        // Create the offer object
-        var obj = {
-          // name: req.body.name,
-          // product_name: req.body.product_name,
-          products: mongoose.Types.ObjectId(req.body.product_id),
-          distributors:  mongoose.Types.ObjectId(req.user._id),
-          // image: url, // Use the correct URL obtained from the file upload
-          type: req.body.type,
-          value: req.body.type,
-          purchase_quantity: req.body.purchase_quantity,
-          bonus_quantity: req.body.bonus_quantity,
-        };
+      // Create the offer object
+      var obj = {
+        // name: req.body.name,
+        // product_name: req.body.product_name,
+        products: mongoose.Types.ObjectId(req.body.product_id),
+        distributors: mongoose.Types.ObjectId(req.user._id),
+        // image: url, // Use the correct URL obtained from the file upload
+        type: req.body.type,
+        value: req.body.type,
+        purchase_quantity: req.body.purchase_quantity,
+        bonus_quantity: req.body.bonus_quantity,
+      };
 
 
-        // Create the offer in the database
-        offer.create(obj)
-          .then((item) => {
-            resp.send({ status: true, message: "Offer created successfully", data: item })
-          })
-          .catch((err) => {
-            resp.send({ status: false, message: "Something Went Worng", data: err })
-          });
+      // Create the offer in the database
+      offer.create(obj)
+        .then((item) => {
+          resp.send({ status: true, message: "Offer created successfully", data: item })
+        })
+        .catch((err) => {
+          resp.send({ status: false, message: "Something Went Worng", data: err })
+        });
       // });
     } else {
       resp.send({ status: false, message: "Offer already exists", data: null })

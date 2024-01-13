@@ -116,6 +116,7 @@ module.exports.updateproduct = async (req, resp) => {
     sub_title: req.body.sub_title,
     category_id: req.body.category_id,
     description: req.body.description,
+    applicable_tax: req.body.applicable_tax
   };
 
   Product.updateOne(
