@@ -55,6 +55,8 @@ module.exports = (route) => {
     RetailerController.retailer_update
   );
   route.delete("/retailer_delete", auth, RetailerController.retailer_delete);
+  route.post("/payment_init", auth, RetailerController.payment_init);
+  route.get('/paymentStatus/:mtransactioId', RetailerController.paymentStatus)
 
   // distributor routes
   route.post("/distributor_login", DistributorController.distributor_login);
