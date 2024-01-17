@@ -358,23 +358,25 @@ const axios = require('axios');
 
 module.exports.payment_init = async (req, res) => {
   try {
+    console.log(11111111111111111111111111111111, req.body);
       const merchantTransactionId = 'MT'+Date.now();
-      const newdata = await Order.findOne({retailer_id:req.user._id})
-      console.log(newdata,"NEW???????????????????");
+      const newdata = await Order.findOne({order_id:req.body.number})
+      console.log(newdata,"NEW?????????????>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>??????");
+      // console.log("ID????????????????????",merchantTransactionId);
       const data = {
           merchantId: 'PGTESTPAYUAT',
-          merchantTransactionId: 'MT'+Date.now(),
+          merchantTransactionId: merchantTransactionId,
           merchantUserId: 'MUID123',
           name: req.user.ownername,
-          amount: newdata.price *100 ,
-          redirectUrl: `https://api.meddaily.in/api/paymentStatus/${merchantTransactionId}`,
-          redirectMode: 'GET',
+          amount: newdata.price * 100 ,
+          redirectUrl: `https://api.meddaily.in/paymentStatus/${merchantTransactionId}`,
+          redirectMode: 'POST',
           mobileNumber: req.user.phonenumber,
           paymentInstrument: {
               type: 'PAY_PAGE'
           }
       };
-      console.log("DATA",data);
+      // console.log("DATA",data);
       const payload = JSON.stringify(data);
       const payloadMain = Buffer.from(payload).toString('base64');
       const keyIndex = 1;
@@ -410,16 +412,16 @@ module.exports.payment_init = async (req, res) => {
 }
 
 module.exports.paymentStatus = async(req,res)=>{
-  return console.log(req.body)
+   console.log(res.req.body)
   const merchantTransactionId = res.req.body.transactionId
     const merchantId = res.req.body.merchantId
     const keyIndex = 1;
-    const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + salt_key;
+    const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
     const sha256 = crypto.createHash('sha256').update(string).digest('hex');
     const checksum = sha256 + "###" + keyIndex;
     const options = {
     method: 'GET',
-    url: `https://api.phonepe.com/apis/hermes/pg/v1/status/${merchantId}/${merchantTransactionId}`,
+    url: `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${merchantId}/${merchantTransactionId}`,
     headers: {
         accept: 'application/json',
         'Content-Type': 'application/json',
@@ -428,12 +430,16 @@ module.exports.paymentStatus = async(req,res)=>{
     }
     };
     // CHECK PAYMENT TATUS
+    
     axios.request(options).then(async(response) => {
+      console.log("RESPONSE",response);
         if (response.data.success === true) {
-            const url = `http://localhost:3000/success`
+          console.log("DATA",response);
+            const url = `http://localhost:3113/#/home`
             return res.redirect(url)
         } else {
-            const url = `http://localhost:3000/failure`
+          console.log("DATA FAIL",response);
+            const url = `http://localhost:3113/#/home`
             return res.redirect(url)
         }
     })
@@ -626,7 +632,7 @@ module.exports.product_details = async (req, res) => {
 
 module.exports.add_to_cart = async (req, res) => {
   await Cart.findOne({ user_id: req.user._id }).then(async (cartdata) => {
-    console.log("is cart data coming ?", cartdata);
+    // console.log("is cart data coming ?", cartdata);
     if (cartdata != null) {
       if (
         cartdata.distributor_id == req.body.distributor_id &&
@@ -686,7 +692,7 @@ module.exports.get_cart = async (req, res) => {
   console.log("ID>>>>>>>>>>>>>>>>>>>", req.user._id);
   Cart.find({ user_id: req.user._id })
     .then(async (item) => {
-      console.log("cart values", item); // Log the fetched items
+      // console.log("cart values", item); // Log the fetched items
 
       var arr = [];
       for (var i = 0; i < item.length; i++) {
@@ -694,11 +700,11 @@ module.exports.get_cart = async (req, res) => {
         var product = await Product.findById(item[i].product_id).catch((err) => {
           console.error("Error fetching product:", err);
         });
-        console.log("PRODUCT", product);
+        // console.log("PRODUCT", product);
         var dis = product?.distributors?.filter(
           (pro) => pro.distributorId == item[i].distributor_id
         );
-        console.log("DIS", dis);
+        // console.log("DIS", dis);
         var obj = {
           _id: item[i]?._id,
           product_id: item[i]?.product_id,
@@ -710,7 +716,7 @@ module.exports.get_cart = async (req, res) => {
           product: product
         };
         arr.push(obj);
-        console.log("object xoxoxo", obj);
+        // console.log("o bject xoxoxo", obj);
       }
       return res.send({
         status: true,
@@ -849,7 +855,7 @@ module.exports.checkout = async (req, res) => {
           id: product._id,
           name: product.title,
           image: product.image,
-          price: price[0].price,
+          price: product[0]?.price,
           tax: product.applicable_tax,
           batch_no: "",
           exp_date: "",
@@ -870,7 +876,7 @@ module.exports.checkout = async (req, res) => {
       retailer_id: req.user._id,
       order_id: orderid,
       distributor_id: distributorId,
-      price: req.body.price,
+      price: req.body?.price,
       products: item,
       payment_type: req.body.payment_type,
       bonus_quantity: req.body.bonus_quantity,
@@ -914,7 +920,7 @@ module.exports.my_order = async (req, res) => {
 module.exports.return_order = async (req, res) => {
   // console.log("called");
   const orderId = req.body.order_id;
-  console.log(">>>>>>>>>>>>", orderId);
+  // console.log(">>>>>>>>>>>>", orderId);
   try {
     const updatedOrder = await Order.findOneAndUpdate(
       { order_id: orderId, order_status: 3 },
@@ -1067,9 +1073,11 @@ module.exports.order_details = async (req, res) => {
         }
         let totalAmount = 0;
         let getProductTax;
+
         result[0].products.map(async (e) => {
           totalAmount += result[0].price * e.quantity ?? 1;
         });
+
         result = result[0];
         getProductTax = await Product.findOne({ _id: result.products[0].id });
         console.log(getProductTax);
@@ -1080,24 +1088,26 @@ module.exports.order_details = async (req, res) => {
         let retailerName = await Retailer.findOne({
           _id: result.retailer_id,
         });
-        result._doc.distributor_name =
-          distributerName?.firstname + " " + distributerName?.lastname;
+
+        result._doc.distributor_name = distributerName?.firstname + " " + distributerName?.lastname;
         console.log(">>?>?>", result._doc.distributor_name);
+
         result._doc.distributor_address =
           distributerName?.city +
           " " +
           distributerName?.area +
           " " +
           distributerName?.state;
+
         result._doc.retailer_name = retailerName.ownername;
+        
         result._doc.retailer_address = retailerName.address;
         result._doc.item_total = totalAmount;
         result._doc.Tax = (totalAmount * getProductTax?.applicable_tax) / 100;
         result._doc.applicable_tax = getProductTax?.applicable_tax;
 
         result._doc.delivery_fee = 100;
-        result._doc.order_total =
-          result._doc.item_total + result._doc.Tax + result._doc.delivery_fee;
+        result._doc.order_total = result._doc.item_total + result._doc.Tax + result._doc.delivery_fee;
         res.send({
           status: true,
           message: "Order Details",

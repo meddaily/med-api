@@ -46,7 +46,7 @@ module.exports.addProduct = (req, resp) => {
 module.exports.getproduct = async (req, resp) => {
   Product.find()
     .then((data) => {
-      console.log(data)
+      // console.log(data)
       if (!data || data.length == 0) {
         response.sendResponse(resp, false, "Sorry, Product not found.");
       }
