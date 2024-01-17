@@ -435,11 +435,11 @@ module.exports.paymentStatus = async(req,res)=>{
       console.log("RESPONSE",response);
         if (response.data.success === true) {
           console.log("DATA",response);
-            const url = `http://localhost:3113/#/home`
+            const url = `https://www.meddaily.in/#/home`
             return res.redirect(url)
         } else {
           console.log("DATA FAIL",response);
-            const url = `http://localhost:3113/#/home`
+            const url = `https://www.meddaily.in/#/home`
             return res.redirect(url)
         }
     })
