@@ -253,7 +253,7 @@ module.exports.distributor_delete = async (req, resp) => {
 module.exports.distributor_list = async (req, res) => {
   await Distributor.find(
     { verify: true },
-    { firstname: 1, lastname: 1, city: 1, area: 1, phonenumber: 1 }
+    { firstname: 1, lastname: 1, city: 1, area: 1, phonenumber: 1, distributorcode: 1 }
   )
     .then((result) => {
       res.send({ status: true, message: "Distributor List", data: result });
@@ -388,14 +388,14 @@ module.exports.return_order_accept = async (req, res) => {
     return res.send({ status: false, message: "Already accepted" });
   }
 
-  console.log("order>>>>>>>>>>>>>",getOrder);
+  console.log("order>>>>>>>>>>>>>", getOrder);
 
   const items = getOrder.products;
-  console.log("ITEM",items);
+  console.log("ITEM", items);
   for (const item of items) {
     const productId = item.id;
     const quantity = item.return_quantity;
-    const distributorId = req.user._id; 
+    const distributorId = req.user._id;
 
     await Product.updateOne(
       {
@@ -800,12 +800,12 @@ module.exports.bulkUpdate = async (req, res) => {
     console.log("jsonDataas", jsonData);
     for (let e of jsonData) {
       const productId = e.Id;
-      console.log("IDs",e.Id);
+      console.log("IDs", e.Id);
       // const productId = e.product_id;
       const newPrice = parseInt(e.price);
       const newStock = parseInt(e.stock);
 
-     const dataproduct= Product.updateOne(
+      const dataproduct = Product.updateOne(
         {
           "distributors.distributorId": req.user._id,
           _id: productId,
@@ -1191,7 +1191,7 @@ module.exports.get_summary = async (req, res) => {
     const mainTotal = totalTax + deliveryCharge + deliveryTax;
     const html = await ejsRenderFile(
       path.join(__dirname, "../views/summarypdf.ejs"),
-      { getRetailer, getDistributor, getOrder, totalTax, deliveryCharge, deliveryTax,mainTotal }
+      { getRetailer, getDistributor, getOrder, totalTax, deliveryCharge, deliveryTax, mainTotal }
     );
     html_to_pdf.generatePdf({ content: html }, { format: 'A4', printBackground: true }).then(pdfBuffer => {
       const base64String = pdfBuffer.toString("base64");
@@ -1406,9 +1406,9 @@ module.exports.inventory_download = async (req, res) => {
         { header: 'Id', key: '_id', width: 40 },
         { header: 'Product Name', key: 'name', width: 40 },
         { header: 'Subtitle', key: 'subtitle', width: 70 },
-        { header: 'price', key:'price', width: 40 },
-        { header: 'stock', key:'stoke',width: 40 },
-      ]; 
+        { header: 'price', key: 'price', width: 40 },
+        { header: 'stock', key: 'stoke', width: 40 },
+      ];
       // console.log("Worksheet columns", worksheet.columns);
 
       worksheet.addRows(responseData);
