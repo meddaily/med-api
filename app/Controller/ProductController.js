@@ -194,7 +194,7 @@ module.exports.update_inventory = async (req, res) => {
   console.log("THiIS ==================>", req.body);
   const { productId, distributorId, distributorName, price, stock } = req.body;
   const old_des = await Product.findOne({ _id: productId });
-  console.log(old_des);
+  console.log(old_des,"olddes");
   let flag = 0;
   let ID;
   if (old_des) {

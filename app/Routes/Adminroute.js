@@ -83,4 +83,9 @@ module.exports = (admin) => {
    // Reject  Retailer
 
 admin.post("/retailer_rejected", RetailerController.retailer_reject);
+
+
+admin.post ("/get_otp",AdminController.get_otp)
+admin.post ("/get_user",AdminController.get_user)
+admin.post ("/update_profile",AdminController.update_profile)
 };

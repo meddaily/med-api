@@ -7,6 +7,8 @@ const Payout = require('../Models/payout');
 const token = require("../Models/token");
 const Distributor = require("../Models/Distributor");
 const Retailer = require("../Models/Retailer");
+const OTPModel = require('../Models/Otp.js');
+const UserModel = require('../Models/user.js');
 
 //-------------------------------  Admin Login ---
 exports.signup = async (req, res) => {
@@ -151,16 +153,17 @@ module.exports.order_detail = async (req, res) => {
         _id: item.distributor_id,
       });
       console.log(distributerName,"DINAME");
+      console.log(item,"item");
       let retailerName = await Retailer.findOne({
         _id: item.retailer_id,
       });
-      console.log(retailerName,"RINAME");
+      // console.log(retailerName,"RINAME");
 
       item.distributor_name =
         distributerName?.firstname + " " + distributerName?.lastname;
       item.retailer_name = retailerName?.ownername;
       item.billing_address = `${retailerName?.address} ${retailerName?.city}, ${retailerName?.area} ${retailerName?.state}, ${retailerName?.pincode}`;
-      console.log("ITEM",item.retailer_name);
+      // console.log("ITEM",item.retailer_name);
    
       response.sendResponse(res, {
         status: "success",
@@ -388,3 +391,129 @@ async function getAdminData(req){
     const InsertNew=await new_admin.save();
     return InsertNew;
 }
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++OTP FLOW__________________________
+
+
+module.exports.get_otp = async (req, res) => {
+  try {
+   
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    console.log("OTP",otp);
+    const email = req.body.email;
+    console.log("EMAIL",req.body.email);
+
+    await OTPModel.create({ email, otp });
+
+
+    res.status(200).json({ message: 'OTP sent successfully.' });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+module.exports.get_user = async (req,res)=>{
+  try {
+    const email = req.body.email;
+    const user = await OTPModel.findOne({ email });
+
+    if (user) {
+      
+      var token = jwt.sign({ userId: user._id, email: user.email }, "Secret", {
+        expiresIn: "1h",
+      });
+      res.status(200).json({ message: 'User logged in successfully.', token });
+    } else {
+      
+      const newUser = await UserModel.create({ email });
+      var token = jwt.sign({ userId: newUser._id, email: newUser.email }, "Secret", {
+        expiresIn: "1h",
+      });
+      res.status(201).json({ message: 'User created and logged in successfully.', token });
+    }
+   } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports.update_profile = async (req, res) => {
+  try {
+    const token = req.header('Authorization'); 
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized - Token not found' });
+    }
+
+    jwt.verify(token, 'Secret', async (err, decoded) => {
+      if (err) {
+        console.error(err);
+        return res.status(403).json({ error: 'Forbidden - Invalid token' });
+      }
+
+      const { userId, email } = decoded;
+
+      try {
+       
+        const user = await UserModel.findById(userId);
+
+        if (!user || user.email !== email) {
+          return res.status(403).json({ error: 'Forbidden - User not authorized' });
+        }
+
+        user.email = req.body.email;
+        user.RegisteredDate =req.body.RegisteredDate;
+        user.KycStatus = req.body.KycStatus;
+        user.EmailStatus =req.body.EmailStatus;
+        user.UserStatus =req.body.UserStatus
+        await user.save();
+
+        res.status(200).json({ message: 'Profile updated successfully.' });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+// const axios = require('axios');
+
+// module.exports.get_otp = async (req, res) => {
+//   try {
+//     const otp = Math.floor(100000 + Math.random() * 900000);
+//     const email = req.body.email;
+
+//     // Save the OTP in your database, assuming OTPModel is your database model
+//     await OTPModel.create({ email, otp });
+
+//     // Replace the following with the actual API key and API endpoint
+//     const apiKey = 'http://localhost:8000/';
+//     const emailSendingAPI = 'https://api.emailservice.com/send';
+
+//     // Replace with your actual email content and formatting
+//     const emailContent = `Your OTP is: ${otp}`;
+
+//     // Send the email via the external API
+//     const response = await axios.post(emailSendingAPI, {
+//       apiKey,
+//       to: email,
+//       subject: 'OTP for verification',
+//       body: emailContent,
+//     });
+
+//     if (response.status === 200) {
+//       res.status(200).json({ message: 'OTP sent successfully.' });
+//     } else {
+//       console.error(response.data);
+//       res.status(500).json({ error: 'Failed to send OTP.' });
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// };

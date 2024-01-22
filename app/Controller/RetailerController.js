@@ -359,14 +359,14 @@ const axios = require('axios');
 module.exports.payment_init = async (req, res) => {
   try {
     console.log(11111111111111111111111111111111, req.body);
-      const merchantTransactionId = 'MT'+Date.now();
-      const newdata = await Order.findOne({order_id:req.body.number})
+      const merchantTransactionId = req.body.transactionId;
+      const newdata = await Order.findOne({order_id:req.body.order_id})
       console.log(newdata,"NEW?????????????>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>??????");
       // console.log("ID????????????????????",merchantTransactionId);
       const data = {
           merchantId: 'PGTESTPAYUAT',
           merchantTransactionId: merchantTransactionId,
-          merchantUserId: 'MUID123',
+          merchantUserId: req.body.MUID,
           name: req.user.ownername,
           amount: newdata.price * 100 ,
           redirectUrl: `https://api.meddaily.in/paymentStatus/${merchantTransactionId}`,
@@ -379,8 +379,10 @@ module.exports.payment_init = async (req, res) => {
       // console.log("DATA",data);
       const payload = JSON.stringify(data);
       const payloadMain = Buffer.from(payload).toString('base64');
+      // const keyIndex = 2;                                  
       const keyIndex = 1;
-      const string = payloadMain + '/pg/v1/pay' + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
+      // const string = payloadMain + '/pg/v1/pay' + 'd7294921-bcce-4501-ae5e-303eb9bfa547';  
+      const string = payloadMain + '/pg/v1/pay' + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';  
       const sha256 = crypto.createHash('sha256').update(string).digest('hex');
       const checksum = sha256 + '###' + keyIndex;
       const prod_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay"
@@ -402,6 +404,10 @@ module.exports.payment_init = async (req, res) => {
       })
       .catch(function (error) {
           console.error(error);
+          return res.status(500).send({
+            message: error.message,
+            success: false
+        })
       });
   } catch (error) {
       res.status(500).send({
@@ -415,8 +421,10 @@ module.exports.paymentStatus = async(req,res)=>{
    console.log(res.req.body)
   const merchantTransactionId = res.req.body.transactionId
     const merchantId = res.req.body.merchantId
-    const keyIndex = 1;
-    const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
+    const keyIndex = 2;
+    // const keyIndex = 1;
+    const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + 'd7294921-bcce-4501-ae5e-303eb9bfa547';
+    // const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
     const sha256 = crypto.createHash('sha256').update(string).digest('hex');
     const checksum = sha256 + "###" + keyIndex;
     const options = {
@@ -603,7 +611,7 @@ module.exports.product_details = async (req, res) => {
   distributor.map((id) => {
     distributor_id.push(id._id.toString());
   });
-  console.log(distributor_id);
+  // console.log(distributor_id);
   var pro = await Product.findOne({ _id: req.body.id });
   if (pro?.distributors.length > 0) {
     pro.distributors.map((dis) => {
@@ -612,7 +620,7 @@ module.exports.product_details = async (req, res) => {
       }
     });
   }
-
+  console.log(pro,"PRODUCT");
   var product = {
     name: pro?.title,
     subname: pro?.sub_title,
@@ -704,19 +712,19 @@ module.exports.get_cart = async (req, res) => {
         var dis = product?.distributors?.filter(
           (pro) => pro.distributorId == item[i].distributor_id
         );
-        // console.log("DIS", dis);
+        console.log("DIS", dis);
         var obj = {
           _id: item[i]?._id,
           product_id: item[i]?.product_id,
           product_name: product?.title,
-          distributor_name: dis[i]?.fristname,
-          distributor_id: dis[i]?.distributorId,
+          distributor_name: dis[0]?.distributorName,
+          distributor_id: dis[0]?.distributorId,
           price: dis[0]?.price,
           quantity: item[i]?.quantity,
           product: product
         };
         arr.push(obj);
-        // console.log("o bject xoxoxo", obj);
+        console.log("o bject xoxoxo", obj);
       }
       return res.send({
         status: true,
@@ -824,6 +832,86 @@ module.exports.retailer_detail = async (req, res) => {
     });
 };
 
+// module.exports.checkout = async (req, res) => {
+//   try {
+//     let items = [];
+//     let distributorId;
+//     // console.log("body", req.body);
+
+//     const cartdata = await Cart.find({ user_id: req.user._id });
+//     if (!cartdata || cartdata.length === 0) {
+//       throw new Error("Cart is empty");
+//     }
+//     console.log(cartdata,"dta");
+//     distributorId = cartdata[0].distributor_id;
+
+//     for (const cartItem of cartdata) {
+//       const product = await Product.findOne({ _id: cartItem.product_id });
+//       if (!product) {
+//         throw new Error("Product not found");
+//       }
+//       console.log(cartItem,"item");
+//       const distributorProduct = product.distributors.find(
+//         (e) => e.distributorId == distributorId
+//       );
+
+//       if (!distributorProduct || distributorProduct.stock < cartItem.quantity) {
+//         throw new Error("Not enough stock for product: " + product.title);
+//       }
+
+//       const price = distributorProduct.price;
+
+//       // console.log(product, 'ProductDetail');
+//       // console.log("price>>>>>>>>>", price);
+
+//       const obj = {
+//         id: product._id,
+//         name: product.title,
+//         image: product.image,
+//         price: price,
+//         tax: product.applicable_tax,
+//         batch_no: "",
+//         exp_date: "",
+//         quantity: cartItem.quantity, // Use the quantity from the cartItem
+//       };
+//       items.push(obj);
+//     }
+
+//     const orderId = "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
+
+//     // console.log(orderId, "ORDERID");
+
+//     const orderObj = {
+//       retailer_id: req.user._id,
+//       order_id: orderId,
+//       distributor_id: distributorId,
+//       price: req.body?.price,
+//       products: items,
+//       payment_type: req.body.payment_type,
+//       bonus_quantity: req.body.bonus_quantity,
+//       delivery_fee: req.body.delivery_fee,
+//     };
+
+//     const order = await Order.create(orderObj);
+
+//     if (req.body.originalPrice !== undefined) {
+//       await payout.findOneAndUpdate(
+//         { distributor_id: distributorId },
+//         { $inc: { amount: req.body.originalPrice } },
+//         { upsert: true, new: true }
+//       );
+//     } else {
+//       console.error("Original price is undefined in the request body.");
+//     }
+
+//     res.send({ status: true, message: "order success", data: order });
+//   } catch (err) {
+//     console.error(err);
+//     res.send({ status: false, message: err.message, data: null });
+//   }
+// };
+
+
 module.exports.checkout = async (req, res) => {
   try {
     let item = [];
@@ -849,18 +937,19 @@ module.exports.checkout = async (req, res) => {
         var price = product?.distributors?.filter(
           (pro) => pro.distributorId == cartdata[0].distributor_id
         );
-
-        console.log(product, 'ProductDetail')
+        console.log(cartdata,"cartdata");
+        // console.log(product, 'ProductDetail')
+        // console.log("price>>>>>>>>>",price);
         var obje = {
           id: product._id,
           name: product.title,
           image: product.image,
-          price: product[0]?.price,
+          price: price[0]?.price,
           tax: product.applicable_tax,
           batch_no: "",
           exp_date: "",
-          // quantity: cartdata[0].quantity,
-          quantity: req.body.bonus_quantity,
+          quantity: cartdata[i].quantity,
+          // quantity: req.body.bonus_quantity,
         };
         item.push(obje);
       }
@@ -885,11 +974,15 @@ module.exports.checkout = async (req, res) => {
 
     const order = await Order.create(obj);
 
-    await payout.findOneAndUpdate(
-      { distributor_id: distributorId },
-      { $inc: { amount: req.body.originalPrice } },
-      { upsert: true, new: true }
-    );
+    if (req.body.originalPrice !== undefined) {
+      await payout.findOneAndUpdate(
+        { distributor_id: distributorId },
+        { $inc: { amount: req.body.originalPrice } },
+        { upsert: true, new: true }
+      );
+    } else {
+      console.error("Original price is undefined in the request body.");
+    }
     // await Payment.save();
     res.send({ status: true, message: "order success", data: order });
     // await Order.create(obj)
@@ -904,6 +997,8 @@ module.exports.checkout = async (req, res) => {
     res.send({ status: true, message: err.message, data: null });
   }
 };
+
+
 
 module.exports.my_order = async (req, res) => {
   await Order.find({ retailer_id: req.user._id })
