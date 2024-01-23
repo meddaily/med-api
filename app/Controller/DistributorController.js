@@ -428,8 +428,8 @@ module.exports.return_order_reject = async (req, res) => {
     const id = req.body.order_id;
     console.log("id", id);
     const updatedOrderId = id.replace('RETURN', '');
-    const result = await Order.updateOne({ order_id: id }, { $set: { order_id: updatedOrderId, status: 'rejected' } });
-    console.log("idupdate", updatedOrderId);
+    const result = await Order.updateOne({ order_id: id }, { $set: { order_id: updatedOrderId, order_status: 3 } });
+    console.log("idupdate", result);
     return res.send({
       status: true,
       message: "order return rejected",

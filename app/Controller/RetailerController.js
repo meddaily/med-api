@@ -364,7 +364,7 @@ module.exports.payment_init = async (req, res) => {
       console.log(newdata,"NEW?????????????>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>??????");
       // console.log("ID????????????????????",merchantTransactionId);
       const data = {
-          merchantId: 'PGTESTPAYUAT',
+          merchantId: 'MEDDAILYONLINE',
           merchantTransactionId: merchantTransactionId,
           merchantUserId: req.body.MUID,
           name: req.user.ownername,
@@ -379,13 +379,13 @@ module.exports.payment_init = async (req, res) => {
       // console.log("DATA",data);
       const payload = JSON.stringify(data);
       const payloadMain = Buffer.from(payload).toString('base64');
-      // const keyIndex = 2;                                  
-      const keyIndex = 1;
-      // const string = payloadMain + '/pg/v1/pay' + 'd7294921-bcce-4501-ae5e-303eb9bfa547';  
-      const string = payloadMain + '/pg/v1/pay' + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';  
+      const keyIndex = 2;                                  
+      // const keyIndex = 1;
+      const string = payloadMain + '/pg/v1/pay' + 'd7294921-bcce-4501-ae5e-303eb9bfa547';  
+      // const string = payloadMain + '/pg/v1/pay' + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';  
       const sha256 = crypto.createHash('sha256').update(string).digest('hex');
       const checksum = sha256 + '###' + keyIndex;
-      const prod_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay"
+      const prod_URL = "https://api.phonepe.com/apis/hermes/pg/v1/pay"
       const options = {
           method: 'POST',
           url: prod_URL,
@@ -763,20 +763,44 @@ module.exports.update_cart = async (req, res) => {
 };
 
 module.exports.delete_cart = async (req, res) => {
-  await Cart.findOneAndDelete({ _id: req.body.cart_id })
-    .then((result) => {
+  const cartIds = req.body.cart_ids; // Assuming cart_ids is an array of cart_id values
+  try {
+    const result = await Cart.deleteMany({ _id: { $in: cartIds } });
+    console.log("result",result);
+    if (result.deletedCount > 0) {
       return res.send({
         status: true,
-        message: "cart data delete successfull",
+        message: "Cart data delete successful",
       });
-    })
-    .catch((err) => {
+    } else {
       return res.send({
         status: false,
-        message: err,
+        message: "No matching cart data found for deletion",
       });
+    }
+  } catch (err) {
+    return res.send({
+      status: false,
+      message: err.message,
     });
+  }
 };
+
+// module.exports.delete_cart = async (req, res) => {
+//   await Cart.deleteMany({ _id: req.body.cart_id })
+//     .then((result) => {
+//       return res.send({
+//         status: true,
+//         message: "cart data delete successfull",
+//       });
+//     })
+//     .catch((err) => {
+//       return res.send({
+//         status: false,
+//         message: err,
+//       });
+//     });
+// };
 
 module.exports.retailer_list = async (req, res) => {
   await Retailer.find(
@@ -912,34 +936,121 @@ module.exports.retailer_detail = async (req, res) => {
 // };
 
 
+// module.exports.checkout = async (req, res) => {
+//   try {
+//     let item = [];
+//     let distributorId;
+//     console.log("body", req.body);
+
+
+//     await Cart.find({ user_id: req.user._id }).then(async (cartdata) => {
+//       var len = cartdata?.length;
+
+//       distributorId = cartdata[0].distributor_id;
+//       for (var i = 0; i < len; i++) {
+//         var product = await Product.findOne({ _id: cartdata[i].product_id });
+//         // console.log(product)
+//         product?.distributors?.forEach(async (e) => {
+//           if (e.distributorId == distributorId) {
+//             if (!parseInt(e.stock) > parseInt(cartdata?.quantity)) {
+//               throw new Error("Not enough stock");
+//             }
+//           }
+//         });
+
+//         var price = product?.distributors?.filter(
+//           (pro) => pro.distributorId == cartdata[0].distributor_id
+//         );
+//         console.log(cartdata,"cartdata");
+//         // console.log(product, 'ProductDetail')
+//         // console.log("price>>>>>>>>>",price);
+//         var obje = {
+//           id: product._id,
+//           name: product.title,
+//           image: product.image,
+//           price: price[0]?.price,
+//           tax: product.applicable_tax,
+//           batch_no: "",
+//           exp_date: "",
+//           quantity: cartdata[i].quantity,
+//           // quantity: req.body.bonus_quantity,
+//         };
+//         item.push(obje);
+//       }
+//       await product.save();
+//     });
+
+//     var orderid =
+//       "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
+
+//     console.log(orderid, "ORDERID");
+
+//     var obj = {
+//       retailer_id: req.user._id,
+//       order_id: orderid,
+//       distributor_id: distributorId,
+//       price: req.body?.price,
+//       products: item,
+//       payment_type: req.body.payment_type,
+//       bonus_quantity: req.body.bonus_quantity,
+//       delivery_fee: req.body.delivery_fee
+//     };
+
+//     const order = await Order.create(obj);
+
+//     if (req.body.originalPrice !== undefined) {
+//       await payout.findOneAndUpdate(
+//         { distributor_id: distributorId },
+//         { $inc: { amount: req.body.originalPrice } },
+//         { upsert: true, new: true }
+//       );
+//     } else {
+//       console.error("Original price is undefined in the request body.");
+//     }
+//     // await Payment.save();
+//     res.send({ status: true, message: "order success", data: order });
+//     // await Order.create(obj)
+//     //   .then((item) => {
+//     //     res.send({ status: true, message: "order success", data: item });
+//     //   })
+//     //   .catch((err) => {
+//     //     res.send({ status: true, message: err.message, data: null });
+//     //   });
+//   } catch (err) {
+//     console.log(err);
+//     res.send({ status: true, message: err.message, data: null });
+//   }
+// };
+
 module.exports.checkout = async (req, res) => {
   try {
     let item = [];
     let distributorId;
+    let sameDistributor = true; 
     console.log("body", req.body);
-
 
     await Cart.find({ user_id: req.user._id }).then(async (cartdata) => {
       var len = cartdata?.length;
 
       distributorId = cartdata[0].distributor_id;
+      
       for (var i = 0; i < len; i++) {
         var product = await Product.findOne({ _id: cartdata[i].product_id });
-        // console.log(product)
+
         product?.distributors?.forEach(async (e) => {
-          if (e.distributorId == distributorId) {
-            if (!parseInt(e.stock) > parseInt(cartdata?.quantity)) {
-              throw new Error("Not enough stock");
-            }
+          if (e.distributorId != distributorId) {
+            sameDistributor = false;
+          }
+          
+          if (!parseInt(e.stock) > parseInt(cartdata?.quantity)) {
+            throw new Error("Not enough stock");
           }
         });
 
         var price = product?.distributors?.filter(
           (pro) => pro.distributorId == cartdata[0].distributor_id
         );
-        console.log(cartdata,"cartdata");
-        // console.log(product, 'ProductDetail')
-        // console.log("price>>>>>>>>>",price);
+
         var obje = {
           id: product._id,
           name: product.title,
@@ -949,15 +1060,17 @@ module.exports.checkout = async (req, res) => {
           batch_no: "",
           exp_date: "",
           quantity: cartdata[i].quantity,
-          // quantity: req.body.bonus_quantity,
         };
         item.push(obje);
       }
-      await product.save();
     });
 
-    var orderid =
-      "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
+    // Check if all products have the same distributor
+    if (!sameDistributor) {
+      throw new Error("Products have different distributors. Cannot create order.");
+    }
+
+    var orderid = "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
 
     console.log(orderid, "ORDERID");
 
@@ -983,21 +1096,13 @@ module.exports.checkout = async (req, res) => {
     } else {
       console.error("Original price is undefined in the request body.");
     }
-    // await Payment.save();
+
     res.send({ status: true, message: "order success", data: order });
-    // await Order.create(obj)
-    //   .then((item) => {
-    //     res.send({ status: true, message: "order success", data: item });
-    //   })
-    //   .catch((err) => {
-    //     res.send({ status: true, message: err.message, data: null });
-    //   });
   } catch (err) {
     console.log(err);
     res.send({ status: true, message: err.message, data: null });
   }
 };
-
 
 
 module.exports.my_order = async (req, res) => {
