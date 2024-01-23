@@ -1027,7 +1027,6 @@ module.exports.checkout = async (req, res) => {
     let item = [];
     let distributorId;
     let sameDistributor = true; 
-    console.log("body", req.body);
 
     await Cart.find({ user_id: req.user._id }).then(async (cartdata) => {
       var len = cartdata?.length;
@@ -1038,6 +1037,8 @@ module.exports.checkout = async (req, res) => {
         var product = await Product.findOne({ _id: cartdata[i].product_id });
 
         product?.distributors?.forEach(async (e) => {
+          console.log("bbbbbbbbbbbbbbbbbbbbbbbbb",e.distributorId );
+          console.log("aaaaaaaaaaaaaaaaaaaaaaaaa",distributorId );
           if (e.distributorId != distributorId) {
             sameDistributor = false;
           }
@@ -1067,7 +1068,8 @@ module.exports.checkout = async (req, res) => {
 
     // Check if all products have the same distributor
     if (!sameDistributor) {
-      throw new Error("Products have different distributors. Cannot create order.");
+     return res.status(200).send({ status: false, message: "Products have different distributors. Cannot create order." });
+      // throw new Error("Products have different distributors. Cannot create order.");
     }
 
     var orderid = "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
