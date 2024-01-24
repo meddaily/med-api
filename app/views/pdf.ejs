@@ -99,13 +99,17 @@
                 <img  src="https://distributor.meddaily.in/assets/img/logo2.png" alt="MedDaily Logo"  width="150" height="100">
             </div>
             <div class="invoice-info">
-                <% if(getOrder.return_status === 2){ %>
+                <% if(getOrder.return_status === 3){ %>
                     <h1>Credit Note</h1>
                     <% } else{ %>
                         <h1>Tax Invoice</h1>
                  <% } %>
                 <!-- <p><b>Legal Entity Name:</b> BHARATBHAI MANJIBHAI GOYANI</p> -->
                 <!-- <p><b>Restaurant Name:</b> Shree Sainath Dosa</p> -->
+                <p>
+                    <b>Distributor Name:</b>
+                    <%= getDistributor?.firstname %> <%= getDistributor?.lastname %>
+                </p>
                 <p>
                     <b>Address:</b>
                     <%= getDistributor?.area %>, <%= getDistributor?.city %>, <%= getDistributor?.state %>, <%=
