@@ -99,10 +99,10 @@
                 <img  src="https://distributor.meddaily.in/assets/img/logo2.png" alt="MedDaily Logo"  width="150" height="100">
             </div>
             <div class="invoice-info">
-                <% if(getOrder.return_status === 1){ %>
-                    <h1>Tax Invoice</h1>
-                  <% } else{ %>
+                <% if(getOrder.return_status === 2){ %>
                     <h1>Credit Note</h1>
+                    <% } else{ %>
+                        <h1>Tax Invoice</h1>
                  <% } %>
                 <!-- <p><b>Legal Entity Name:</b> BHARATBHAI MANJIBHAI GOYANI</p> -->
                 <!-- <p><b>Restaurant Name:</b> Shree Sainath Dosa</p> -->
@@ -166,16 +166,16 @@
                                     <%= item?.batch_no %>
                                 </td>
                                 <td><%= (item.tax/2) %>%</td>
-                                <td><%= (((item?.price * item?.quantity)/100)*(item.tax/2)) %></td>
+                                <td><%= Math.round((((item?.price * item?.quantity)/100)*(item.tax/2))) %></td>
                                 <td><%= (item.tax/2) %>%</td>
-                                <td><%= (((item?.price * item?.quantity)/100)*(item.tax/2)) %></td>
+                                <td><%= Math.round((((item?.price * item?.quantity)/100)*(item.tax/2))) %></td>
                                 <td>
                                     <%= item?.quantity %>
                                 </td>
                                 <td>
-                                    <%=(item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2)%>
+                                    <%=Math.round((item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2))%>
                                 </td>
-                                <% totalPrice+=(item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2) %>
+                                <% totalPrice+=(item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2)%>
                                     <!-- <td>2.25</td>
                   <td>2.5%</td>
                   <td>2.25</td>
@@ -202,7 +202,7 @@
                                     <td></td>
                                     <!-- <td colspan="3"></td> -->
                                     <td colspan="3">
-                                        <%=totalPrice%>
+                                        <%=Math.round(totalPrice)%>
                                     </td>
                                 </tr>
                                 <tr>
@@ -214,7 +214,7 @@
                                     <td></td>
                                     <!-- <td colspan="3"></td> -->
                                     <td colspan="3">
-                                        <%=totalPrice%>
+                                        <%=Math.round(totalPrice)%>
                                     </td>
                                 </tr>
                 </tbody>

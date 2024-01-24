@@ -352,107 +352,107 @@ module.exports.retailer_profile = async (req, res) => {
     });
 };
 
-const crypto =  require('crypto');
+const crypto = require('crypto');
 const axios = require('axios');
 
 
 module.exports.payment_init = async (req, res) => {
   try {
     console.log(11111111111111111111111111111111, req.body);
-      const merchantTransactionId = req.body.transactionId;
-      const newdata = await Order.findOne({order_id:req.body.order_id})
-      console.log(newdata,"NEW?????????????>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>??????");
-      // console.log("ID????????????????????",merchantTransactionId);
-      const data = {
-          merchantId: 'MEDDAILYONLINE',
-          merchantTransactionId: merchantTransactionId,
-          merchantUserId: req.body.MUID,
-          name: req.user.ownername,
-          amount: newdata.price * 100 ,
-          redirectUrl: `https://api.meddaily.in/paymentStatus/${merchantTransactionId}`,
-          redirectMode: 'POST',
-          mobileNumber: req.user.phonenumber,
-          paymentInstrument: {
-              type: 'PAY_PAGE'
-          }
-      };
-      // console.log("DATA",data);
-      const payload = JSON.stringify(data);
-      const payloadMain = Buffer.from(payload).toString('base64');
-      const keyIndex = 2;                                  
-      // const keyIndex = 1;
-      const string = payloadMain + '/pg/v1/pay' + 'd7294921-bcce-4501-ae5e-303eb9bfa547';  
-      // const string = payloadMain + '/pg/v1/pay' + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';  
-      const sha256 = crypto.createHash('sha256').update(string).digest('hex');
-      const checksum = sha256 + '###' + keyIndex;
-      const prod_URL = "https://api.phonepe.com/apis/hermes/pg/v1/pay"
-      const options = {
-          method: 'POST',
-          url: prod_URL,
-          headers: {
-              accept: 'application/json',
-              'Content-Type': 'application/json',
-              'X-VERIFY': checksum
-          },
-          data: {
-              request: payloadMain
-          }
-      };
-      axios.request(options).then(function (response) {
-          console.log(response.data.data)
-          return res.send(response.data.data.instrumentResponse.redirectInfo)
-      })
+    const merchantTransactionId = req.body.transactionId;
+    const newdata = await Order.findOne({ order_id: req.body.order_id })
+    console.log(newdata, "NEW?????????????>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>??????");
+    // console.log("ID????????????????????",merchantTransactionId);
+    const data = {
+      merchantId: 'MEDDAILYONLINE',
+      merchantTransactionId: merchantTransactionId,
+      merchantUserId: req.body.MUID,
+      name: req.user.ownername,
+      amount: newdata.price * 100,
+      redirectUrl: `https://api.meddaily.in/paymentStatus/${merchantTransactionId}`,
+      redirectMode: 'POST',
+      mobileNumber: req.user.phonenumber,
+      paymentInstrument: {
+        type: 'PAY_PAGE'
+      }
+    };
+    // console.log("DATA",data);
+    const payload = JSON.stringify(data);
+    const payloadMain = Buffer.from(payload).toString('base64');
+    const keyIndex = 2;
+    // const keyIndex = 1;
+    const string = payloadMain + '/pg/v1/pay' + 'd7294921-bcce-4501-ae5e-303eb9bfa547';
+    // const string = payloadMain + '/pg/v1/pay' + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';  
+    const sha256 = crypto.createHash('sha256').update(string).digest('hex');
+    const checksum = sha256 + '###' + keyIndex;
+    const prod_URL = "https://api.phonepe.com/apis/hermes/pg/v1/pay"
+    const options = {
+      method: 'POST',
+      url: prod_URL,
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-VERIFY': checksum
+      },
+      data: {
+        request: payloadMain
+      }
+    };
+    axios.request(options).then(function (response) {
+      console.log(response.data.data)
+      return res.send(response.data.data.instrumentResponse.redirectInfo)
+    })
       .catch(function (error) {
-          console.error(error);
-          return res.status(500).send({
-            message: error.message,
-            success: false
+        console.error(error);
+        return res.status(500).send({
+          message: error.message,
+          success: false
         })
       });
   } catch (error) {
-      res.status(500).send({
-          message: error.message,
-          success: false
-      })
+    res.status(500).send({
+      message: error.message,
+      success: false
+    })
   }
 }
 
-module.exports.paymentStatus = async(req,res)=>{
-   console.log(res.req.body)
+module.exports.paymentStatus = async (req, res) => {
+  console.log(res.req.body)
   const merchantTransactionId = res.req.body.transactionId
-    const merchantId = res.req.body.merchantId
-    const keyIndex = 2;
-    // const keyIndex = 1;
-    const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + 'd7294921-bcce-4501-ae5e-303eb9bfa547';
-    // const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
-    const sha256 = crypto.createHash('sha256').update(string).digest('hex');
-    const checksum = sha256 + "###" + keyIndex;
-    const options = {
+  const merchantId = res.req.body.merchantId
+  const keyIndex = 2;
+  // const keyIndex = 1;
+  const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + 'd7294921-bcce-4501-ae5e-303eb9bfa547';
+  // const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
+  const sha256 = crypto.createHash('sha256').update(string).digest('hex');
+  const checksum = sha256 + "###" + keyIndex;
+  const options = {
     method: 'GET',
     url: `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${merchantId}/${merchantTransactionId}`,
     headers: {
-        accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-VERIFY': checksum,
-        'X-MERCHANT-ID': `${merchantId}`
+      accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-VERIFY': checksum,
+      'X-MERCHANT-ID': `${merchantId}`
     }
-    };
-    // CHECK PAYMENT TATUS
-    
-    axios.request(options).then(async(response) => {
-      console.log("RESPONSE",response);
-        if (response.data.success === true) {
-          console.log("DATA",response);
-            const url = `https://www.meddaily.in/#/home`
-            return res.redirect(url)
-        } else {
-          console.log("DATA FAIL",response);
-            const url = `https://www.meddaily.in/#/home`
-            return res.redirect(url)
-        }
-    })
+  };
+  // CHECK PAYMENT TATUS
+
+  axios.request(options).then(async (response) => {
+    console.log("RESPONSE", response);
+    if (response.data.success === true) {
+      console.log("DATA", response);
+      const url = `https://www.meddaily.in/#/home`
+      return res.redirect(url)
+    } else {
+      console.log("DATA FAIL", response);
+      const url = `https://www.meddaily.in/#/home`
+      return res.redirect(url)
+    }
+  })
     .catch((error) => {
-        console.error(error);
+      console.error(error);
     });
 
 }
@@ -620,7 +620,7 @@ module.exports.product_details = async (req, res) => {
       }
     });
   }
-  console.log(pro,"PRODUCT");
+  console.log(pro, "PRODUCT");
   var product = {
     name: pro?.title,
     subname: pro?.sub_title,
@@ -766,7 +766,7 @@ module.exports.delete_cart = async (req, res) => {
   const cartIds = req.body.cart_ids; // Assuming cart_ids is an array of cart_id values
   try {
     const result = await Cart.deleteMany({ _id: { $in: cartIds } });
-    console.log("result",result);
+    console.log("result", result);
     if (result.deletedCount > 0) {
       return res.send({
         status: true,
@@ -1026,27 +1026,35 @@ module.exports.checkout = async (req, res) => {
   try {
     let item = [];
     let distributorId;
-    let sameDistributor = true; 
+    let sameDistributor = true;
 
     await Cart.find({ user_id: req.user._id }).then(async (cartdata) => {
       var len = cartdata?.length;
-
+      console.log("cartdatacartdatacartdatacartdata", cartdata);
       distributorId = cartdata[0].distributor_id;
-      
+      console.log(distributorId);
+      cartdata.forEach(async (e) => {
+        // console.log(">>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<", e.distributor_id);
+        // console.log(">>>>>>>>>>>>>ccccccccccccc><<<<<<<<<<<<<<<<<<", distributorId);
+        // console.log("?????????????????????????????", e.distributor_id != distributorId);
+
+        // console.log("bbbbbbbbbbbbb           bbbbbbbbbbbb",e.distributorId );
+
+        // console.log("aaaaaaaaaaaa        aaaaaaaaaaaaa",distributorId );
+        if (e.distributor_id.toString() != distributorId.toString()) {
+          // console.log(1111111111111);
+          sameDistributor = false;
+        }
+
+        if (!parseInt(e.stock) > parseInt(cartdata?.quantity)) {
+          throw new Error("Not enough stock");
+        }
+      });
       for (var i = 0; i < len; i++) {
         var product = await Product.findOne({ _id: cartdata[i].product_id });
 
-        product?.distributors?.forEach(async (e) => {
-          console.log("bbbbbbbbbbbbbbbbbbbbbbbbb",e.distributorId );
-          console.log("aaaaaaaaaaaaaaaaaaaaaaaaa",distributorId );
-          if (e.distributorId != distributorId) {
-            sameDistributor = false;
-          }
-          
-          if (!parseInt(e.stock) > parseInt(cartdata?.quantity)) {
-            throw new Error("Not enough stock");
-          }
-        });
+        // product?.distributors?.forEach(async (e) => {
+
 
         var price = product?.distributors?.filter(
           (pro) => pro.distributorId == cartdata[0].distributor_id
@@ -1067,14 +1075,14 @@ module.exports.checkout = async (req, res) => {
     });
 
     // Check if all products have the same distributor
-    if (!sameDistributor) {
-     return res.status(200).send({ status: false, message: "Products have different distributors. Cannot create order." });
+    if (sameDistributor === false) {
+      return res.status(200).send({ status: false, message: "Products have different distributors. Cannot create order." });
       // throw new Error("Products have different distributors. Cannot create order.");
     }
 
     var orderid = "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
 
-    console.log(orderid, "ORDERID");
+    // console.log(orderid, "ORDERID");
 
     var obj = {
       retailer_id: req.user._id,
@@ -1302,7 +1310,7 @@ module.exports.order_details = async (req, res) => {
           distributerName?.state;
 
         result._doc.retailer_name = retailerName.ownername;
-        
+
         result._doc.retailer_address = retailerName.address;
         result._doc.item_total = totalAmount;
         result._doc.Tax = (totalAmount * getProductTax?.applicable_tax) / 100;
