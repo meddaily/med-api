@@ -31,7 +31,8 @@ var OrderSchema = mongoose.Schema(
     payment_status: { type: Number, default: 4 },
     payment_type: { type: Number, default: 0 },
     time: { type: Number, default: Date.now },
-    delivery_fee: { type: Boolean, default: false}
+    delivery_fee: { type: Boolean, default: false},
+    payment:{type:Boolean , default:false}
   },
   {
     timestamps: true,

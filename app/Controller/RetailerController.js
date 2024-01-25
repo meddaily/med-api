@@ -450,6 +450,15 @@ module.exports.paymentStatus = async (req, res) => {
     console.log("RESPONSE", response.data);
     if (response.data.success === true) {
       console.log("DATA", response.data);
+      let get_order = await Order.findOne({
+        order_id: req.params.order_id,
+        order_status: 4,
+      });
+      if (get_order) {
+        get_order.payment = true;
+        await get_order.save();
+      }
+      // const url = `http://localhost:3113/#/home`
       const url = `https://www.meddaily.in/#/home`
       return res.redirect(url)
     } else {
@@ -464,6 +473,7 @@ module.exports.paymentStatus = async (req, res) => {
         await get_order.save();
       }
       const url = `https://www.meddaily.in/#/home`
+      // const url = `http://localhost:3113/#/home`
       return res.redirect(url)
     }
   })
@@ -928,7 +938,7 @@ module.exports.retailer_detail = async (req, res) => {
 //       distributor_id: distributorId,
 //       price: req.body?.price,
 //       products: items,
-//       payment_type: req.body.payment_type,
+//       payment inityment_type: req.body.payment_type,
 //       bonus_quantity: req.body.bonus_quantity,
 //       delivery_fee: req.body.delivery_fee,
 //     };
