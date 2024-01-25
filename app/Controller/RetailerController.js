@@ -358,25 +358,28 @@ const axios = require('axios');
 
 module.exports.payment_init = async (req, res) => {
   try {
-    console.log(11111111111111111111111111111111, req.body);
+    console.log(">>>>>>>>>>>>>>>>>>>", req.body);
     const merchantTransactionId = req.body.transactionId;
+    // const merchantTransactionId ='MT'+ Date.now()
     const newdata = await Order.findOne({ order_id: req.body.order_id })
     console.log(newdata, "NEW?????????????>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>??????");
     // console.log("ID????????????????????",merchantTransactionId);
     const data = {
       merchantId: 'MEDDAILYONLINE',
+      // merchantId:'PGTESTPAYUAT',
+      order_id: req.body.order_id,
       merchantTransactionId: merchantTransactionId,
       merchantUserId: req.body.MUID,
       name: req.user.ownername,
       amount: newdata.price * 100,
-      redirectUrl: `https://api.meddaily.in/paymentStatus/${merchantTransactionId}`,
+      redirectUrl: `https://api.meddaily.in/paymentStatus/${merchantTransactionId}/${req.body.order_id}`,
       redirectMode: 'POST',
       mobileNumber: req.user.phonenumber,
       paymentInstrument: {
         type: 'PAY_PAGE'
       }
-    };
-    // console.log("DATA",data);
+    }; 
+    console.log("DATA",data);
     const payload = JSON.stringify(data);
     const payloadMain = Buffer.from(payload).toString('base64');
     const keyIndex = 2;
@@ -386,6 +389,7 @@ module.exports.payment_init = async (req, res) => {
     const sha256 = crypto.createHash('sha256').update(string).digest('hex');
     const checksum = sha256 + '###' + keyIndex;
     const prod_URL = "https://api.phonepe.com/apis/hermes/pg/v1/pay"
+    // const prod_URL ="https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay"
     const options = {
       method: 'POST',
       url: prod_URL,
@@ -417,8 +421,10 @@ module.exports.payment_init = async (req, res) => {
   }
 }
 
+
 module.exports.paymentStatus = async (req, res) => {
-  console.log(res.req.body)
+  console.log(res.req.body,"body")
+  console.log(res.req.params.order_id,"body param")
   const merchantTransactionId = res.req.body.transactionId
   const merchantId = res.req.body.merchantId
   const keyIndex = 2;
@@ -429,7 +435,8 @@ module.exports.paymentStatus = async (req, res) => {
   const checksum = sha256 + "###" + keyIndex;
   const options = {
     method: 'GET',
-    url: `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${merchantId}/${merchantTransactionId}`,
+    // url: `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${merchantId}/${merchantTransactionId}`,            
+    url: `https://api.phonepe.com/apis/hermes/pg/v1/status/${merchantId}/${merchantTransactionId}`,
     headers: {
       accept: 'application/json',
       'Content-Type': 'application/json',
@@ -440,13 +447,22 @@ module.exports.paymentStatus = async (req, res) => {
   // CHECK PAYMENT TATUS
 
   axios.request(options).then(async (response) => {
-    console.log("RESPONSE", response);
+    console.log("RESPONSE", response.data);
     if (response.data.success === true) {
-      console.log("DATA", response);
+      console.log("DATA", response.data);
       const url = `https://www.meddaily.in/#/home`
       return res.redirect(url)
     } else {
-      console.log("DATA FAIL", response);
+      console.log("DATA FAIL", response.data);
+
+      let get_order = await Order.findOne({
+        order_id: req.params.order_id,
+        order_status: 4,
+      });
+      if (get_order) {
+        get_order.order_status = 0;
+        await get_order.save();
+      }
       const url = `https://www.meddaily.in/#/home`
       return res.redirect(url)
     }
@@ -456,6 +472,7 @@ module.exports.paymentStatus = async (req, res) => {
     });
 
 }
+
 module.exports.retailer_home = async (req, res) => {
   try {
     var bannerdata;
