@@ -581,18 +581,24 @@ module.exports.category_product = async (req, res) => {
 
 module.exports.get_product = async (req, res) => {
   var productdata = [];
+  console.log(req.user._id,"useridretailer");
   var retailer = await Retailer.findOne({ _id: req.user._id });
   var retailercity = retailer.city;
+  console.log(retailercity,"datacity");
   var distributor = await Distributor.find({ city: retailercity });
+  console.log("DISTRIBUTOR",distributor);
   var distributor_id = [];
   distributor.map((id) => {
     distributor_id.push(id._id.toString());
   });
+  
   let pro;
   if (req.query.type === "latest") {
     pro = await Product.find({}).sort({ createdAt: -1 })
   } else {
-    pro = await Product.find({})
+    pro = await Product.find({
+      'distributors.distributorId': { $in: distributor_id }
+    })
   }
 
 

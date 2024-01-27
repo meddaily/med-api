@@ -142,6 +142,7 @@ module.exports.distributor_register = async (req, resp) => {
               pincode,
               phonenumber,
               city,
+              businessname,
               area,
               state,
               distributorcode,
@@ -163,6 +164,7 @@ module.exports.distributor_register = async (req, resp) => {
               firstname: firstname,
               lastname: lastname,
               pincode: pincode,
+              businessname:businessname,
               city: city,
               area: area,
               state: state,
@@ -187,7 +189,7 @@ module.exports.distributor_register = async (req, resp) => {
             fs.unlinkSync(tempPath);
             return resp.status(200).json({
               status: true,
-              message: 'Retailer signup successfully',
+              message: 'Distributor signup successfully',
               data: distributer_data
             })
 

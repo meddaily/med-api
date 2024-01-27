@@ -170,14 +170,14 @@
                                     <%= item?.batch_no %>
                                 </td>
                                 <td><%= (item.tax/2) %>%</td>
-                                <td><%= Math.round((((item?.price * item?.quantity)/100)*(item.tax/2))) %></td>
+                                <td><%= (((item?.price * item?.quantity)/100)*(item.tax/2).tofixed(2)) %></td>
                                 <td><%= (item.tax/2) %>%</td>
-                                <td><%= Math.round((((item?.price * item?.quantity)/100)*(item.tax/2))) %></td>
+                                <td><%= (((item?.price * item?.quantity)/100)*(item.tax/2).tofixed(2)) %></td>
                                 <td>
                                     <%= item?.quantity %>
                                 </td>
                                 <td>
-                                    <%=Math.round((item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2))%>
+                                    <%=(item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2).tofixed(2)>
                                 </td>
                                 <% totalPrice+=(item?.price * item?.quantity) + ((((item?.price * item?.quantity)/100)*(item.tax/2))*2)%>
                                     <!-- <td>2.25</td>

@@ -5,6 +5,7 @@ const DistributorSchema = new mongoose.Schema(
     lastname: { type: String, default: "" },
     phonenumber: { type: String, default: "" },
     email: { type: String, default: "" },
+    businessname:{type:String},
     pincode: { type: String, default: "" },
     city: { type: String, default: "" },
     area: { type: String, default: "" },

@@ -425,14 +425,14 @@ module.exports.get_user = async (req,res)=>{
       var token = jwt.sign({ userId: user._id, email: user.email }, "Secret", {
         expiresIn: "1h",
       });
-      res.status(200).json({ message: 'User logged in successfully.', token });
+      return res.status(200).json({ message: 'User logged in successfully.', token });
     } else {
       
       const newUser = await UserModel.create({ email });
       var token = jwt.sign({ userId: newUser._id, email: newUser.email }, "Secret", {
         expiresIn: "1h",
       });
-      res.status(201).json({ message: 'User created and logged in successfully.', token });
+      return res.status(201).json({ message: 'User created and logged in successfully.', token });
     }
    } catch (err) {
     console.log(err);
