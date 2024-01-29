@@ -77,6 +77,7 @@ module.exports = (admin) => {
   admin.get("/cancel_order_admin", RetailerController.cancel_order_admin);
   admin.get("/order_details_admin", AdminController.order_details);
   admin.get("/download_inventory",ProductController.inventory_download);
+  admin.get("/get_all_report",AdminController.get_all_report);
 
    // Reject  Distributor
    admin.post('/distributor_rejected', DistributorController.distributor_reject);

@@ -9,6 +9,7 @@ const Distributor = require("../Models/Distributor");
 const Retailer = require("../Models/Retailer");
 const OTPModel = require('../Models/Otp.js');
 const UserModel = require('../Models/user.js');
+const ExcelJS = require('exceljs');
 
 //-------------------------------  Admin Login ---
 exports.signup = async (req, res) => {
@@ -36,7 +37,7 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   if (email && password) {
-  await  Admin.findOne({ email: email }).then((check) => {
+    await Admin.findOne({ email: email }).then((check) => {
       if (!check || check.length == 0) {
         response.sendResponse(
           res,
@@ -112,10 +113,10 @@ module.exports.all_order = async (req, res) => {
         console.log("??????????????????????????distributerName???????????????????????????????", distributerName);
 
         // Check if distributerName is defined before accessing its properties
-      
-          e._doc.distributor_name = distributerName?.firstname 
-          
-     
+
+        e._doc.distributor_name = distributerName?.firstname
+
+
 
         e._doc.retailer_name = retailerName?.ownername;
         return e;
@@ -152,8 +153,8 @@ module.exports.order_detail = async (req, res) => {
       let distributerName = await Distributor.findOne({
         _id: item.distributor_id,
       });
-      console.log(distributerName,"DINAME");
-      console.log(item,"item");
+      console.log(distributerName, "DINAME");
+      console.log(item, "item");
       let retailerName = await Retailer.findOne({
         _id: item.retailer_id,
       });
@@ -164,10 +165,10 @@ module.exports.order_detail = async (req, res) => {
       item.retailer_name = retailerName?.ownername;
       item.billing_address = `${retailerName?.address} ${retailerName?.city}, ${retailerName?.area} ${retailerName?.state}, ${retailerName?.pincode}`;
       // console.log("ITEM",item.retailer_name);
-   
+
       response.sendResponse(res, {
         status: "success",
-        data: { ...item._doc,  distributor_name: item.distributor_name,retailer_name: item.retailer_name, billing_address: item.billing_address },
+        data: { ...item._doc, distributor_name: item.distributor_name, retailer_name: item.retailer_name, billing_address: item.billing_address },
       });
     })
     .catch((err) => {
@@ -225,7 +226,7 @@ module.exports.all_payout_request = async (req, res) => {
   } else {
     var obj = { payment_status: req.params.id };
   }
-  console.log("?????????MMMMMMMMMMMMMMMMMMMMMM",obj );
+  console.log("?????????MMMMMMMMMMMMMMMMMMMMMM", obj);
   await payout_transactions
     .find(obj).populate('distributor_id')
     .sort({ createdAt: -1 })
@@ -340,11 +341,11 @@ module.exports.order_details = async (req, res) => {
           distributerName?.state;
         result._doc.retailer_name = retailerName?.ownername;
         result._doc.retailer_address = retailerName?.address;
-        result._doc.item_total = totalAmount;
-        result._doc.Tax = (totalAmount * getProductTax?.applicable_tax) / 100;
-        result._doc.delivery_fee = 100;
-        result._doc.order_total =
-          result._doc.item_total + result._doc.Tax + result._doc.delivery_fee;
+        // result._doc.item_total = totalAmount;
+        // result._doc.Tax = (totalAmount * getProductTax?.applicable_tax) / 100;
+        // result._doc.delivery_fee = 100;
+        // result._doc.order_total =
+        // result._doc.item_total + result._doc.Tax + result._doc.delivery_fee;
         res.send({
           status: true,
           message: "Order Details",
@@ -375,22 +376,114 @@ module.exports.get_invoice = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
 //Operation
-async function getAdminData(req){
-    let request=req.body;  
-    const new_admin = new Admin({
-        email: request.email,
-        password: request.password
-    });
+async function getAdminData(req) {
+  let request = req.body;
+  const new_admin = new Admin({
+    email: request.email,
+    password: request.password
+  });
 
-    const InsertNew=await new_admin.save();
-    return InsertNew;
+  const InsertNew = await new_admin.save();
+  return InsertNew;
+}
+
+function getOrderStatus(code) {
+  if (code === 0) {
+    return "Order Cancelled";
+  } else if (code === 1) {
+    return "Order Shipped";
+  } else if (code === 3) {
+    return "Order Delivered";
+  } else if (code === 4) {
+    return "Order Placed";
+  } else if (code === 5) {
+    return "Order Return";
+  }
+}
+function getPaymentType(paymentType) {
+  switch (paymentType) {
+    case 1:
+      return "COD";
+    case 3:
+      return "On Credit";
+    case 2:
+      return "Prepaid";
+    default:
+      return "";
+  }
+}
+
+module.exports.get_all_report = async (req, res) => {
+  try {
+    const type = req.query.type
+    console.log(type, "type");
+    const value = req.query.value
+    console.log(value, "value");
+
+    const startDate = req.query.startDate;
+    console.log("startdate", new Date(startDate));
+    const endDate = req.query.endDate;
+    console.log("enddate", new Date(endDate));
+
+    let obj = {};
+    if (!startDate && !endDate) {
+      obj = {
+        return_status: { $gt: 1 },
+      };
+    } else {
+      obj = {
+        return_status: { $gt: 1 },
+        createdAt: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate),
+        },
+      };
+    }
+    console.log(obj);
+
+    const data = await Order.find({
+      [type]: value,
+     obj,
+    });
+    // console.log(data,"DELIVERYFEE");
+    // return res.send(data)
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Order Data');
+
+    worksheet.columns = [
+      { header: 'ORDER ID', key: 'order_id', width: 40 },
+      { header: 'RETAILER NAME', key: 'retailer_name', width: 40 },
+      { header: 'DISTRIBUTOR NAME', key: 'distributor_name', width: 40 },
+      { header: 'TOTAL PRICE', key: 'price', width: 40 },
+      { header: 'STATUS', key: 'order_status', width: 40 },
+      { header: 'PAYMENT TYPE', key: 'payment_type', width: 40 },
+    ];
+    for (const order of data) {
+
+      const retailer = await Retailer.findById(order.retailer_id);
+      const distributor = await Distributor.findById(order.distributor_id);
+
+      worksheet.addRow({
+        order_id: order.order_id,
+        retailer_name: retailer ? retailer.ownername : '',
+        distributor_name: distributor ? distributor.firstname + " " + distributor.lastname : "",
+        price: order.price,
+        order_status: getOrderStatus(order.order_status),
+        payment_type: getPaymentType(order.payment_type),
+      });
+    }
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=DeliveryFeeData.xlsx');
+
+    const excelBuffer = await workbook.xlsx.writeBuffer();
+
+    res.end(excelBuffer);
+  } catch (error) {
+    return res.status(500).send("Internal server error")
+  }
 }
 
 
@@ -399,11 +492,11 @@ async function getAdminData(req){
 
 module.exports.get_otp = async (req, res) => {
   try {
-   
+
     const otp = Math.floor(100000 + Math.random() * 900000);
-    console.log("OTP",otp);
+    console.log("OTP", otp);
     const email = req.body.email;
-    console.log("EMAIL",req.body.email);
+    console.log("EMAIL", req.body.email);
 
     await OTPModel.create({ email, otp });
 
@@ -415,26 +508,26 @@ module.exports.get_otp = async (req, res) => {
   }
 };
 
-module.exports.get_user = async (req,res)=>{
+module.exports.get_user = async (req, res) => {
   try {
     const email = req.body.email;
     const user = await OTPModel.findOne({ email });
 
     if (user) {
-      
+
       var token = jwt.sign({ userId: user._id, email: user.email }, "Secret", {
         expiresIn: "1h",
       });
       return res.status(200).json({ message: 'User logged in successfully.', token });
     } else {
-      
+
       const newUser = await UserModel.create({ email });
       var token = jwt.sign({ userId: newUser._id, email: newUser.email }, "Secret", {
         expiresIn: "1h",
       });
       return res.status(201).json({ message: 'User created and logged in successfully.', token });
     }
-   } catch (err) {
+  } catch (err) {
     console.log(err);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -442,7 +535,7 @@ module.exports.get_user = async (req,res)=>{
 
 module.exports.update_profile = async (req, res) => {
   try {
-    const token = req.header('Authorization'); 
+    const token = req.header('Authorization');
 
     if (!token) {
       return res.status(401).json({ error: 'Unauthorized - Token not found' });
@@ -457,7 +550,7 @@ module.exports.update_profile = async (req, res) => {
       const { userId, email } = decoded;
 
       try {
-       
+
         const user = await UserModel.findById(userId);
 
         if (!user || user.email !== email) {
@@ -465,10 +558,10 @@ module.exports.update_profile = async (req, res) => {
         }
 
         user.email = req.body.email;
-        user.RegisteredDate =req.body.RegisteredDate;
+        user.RegisteredDate = req.body.RegisteredDate;
         user.KycStatus = req.body.KycStatus;
-        user.EmailStatus =req.body.EmailStatus;
-        user.UserStatus =req.body.UserStatus
+        user.EmailStatus = req.body.EmailStatus;
+        user.UserStatus = req.body.UserStatus
         await user.save();
 
         res.status(200).json({ message: 'Profile updated successfully.' });

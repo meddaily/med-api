@@ -378,8 +378,8 @@ module.exports.payment_init = async (req, res) => {
       paymentInstrument: {
         type: 'PAY_PAGE'
       }
-    }; 
-    console.log("DATA",data);
+    };
+    console.log("DATA", data);
     const payload = JSON.stringify(data);
     const payloadMain = Buffer.from(payload).toString('base64');
     const keyIndex = 2;
@@ -423,8 +423,8 @@ module.exports.payment_init = async (req, res) => {
 
 
 module.exports.paymentStatus = async (req, res) => {
-  console.log(res.req.body,"body")
-  console.log(res.req.params.order_id,"body param")
+  console.log(res.req.body, "body")
+  console.log(res.req.params.order_id, "body param")
   const merchantTransactionId = res.req.body.transactionId
   const merchantId = res.req.body.merchantId
   const keyIndex = 2;
@@ -581,17 +581,17 @@ module.exports.category_product = async (req, res) => {
 
 module.exports.get_product = async (req, res) => {
   var productdata = [];
-  console.log(req.user._id,"useridretailer");
+  console.log(req.user._id, "useridretailer");
   var retailer = await Retailer.findOne({ _id: req.user._id });
   var retailercity = retailer.city;
-  console.log(retailercity,"datacity");
+  console.log(retailercity, "datacity");
   var distributor = await Distributor.find({ city: retailercity });
-  console.log("DISTRIBUTOR",distributor);
+  console.log("DISTRIBUTOR", distributor);
   var distributor_id = [];
   distributor.map((id) => {
     distributor_id.push(id._id.toString());
   });
-  
+
   let pro;
   if (req.query.type === "latest") {
     pro = await Product.find({}).sort({ createdAt: -1 })
@@ -1116,7 +1116,20 @@ module.exports.checkout = async (req, res) => {
     var orderid = "MEDI" + (Math.floor(Math.random() * (99999 - 11111)) + 11111);
 
     // console.log(orderid, "ORDERID");
-
+    const maxInvoiceNumber = await Order.findOne().sort('-invoicenumber').exec();
+    console.log('Inside the ', maxInvoiceNumber)
+    let yeardata=""
+    // Increment the next invoice number
+    if (maxInvoiceNumber) {
+      // const numericPart = parseInt(maxInvoiceNumber.invoicenumber.slice(-3), 10);
+      // console.log(numericPart, "newericpart");
+      let newinvoicenumber = parseInt(maxInvoiceNumber.invoicenumber)
+      let nextInvoiceNumber =newinvoicenumber+ 1;
+      console.log("nextInvoiceNumber", nextInvoiceNumber);
+      // const currentYear = new Date().getFullYear();
+       yeardata = nextInvoiceNumber;
+      console.log("DATAYEAR", yeardata);
+    }
     var obj = {
       retailer_id: req.user._id,
       order_id: orderid,
@@ -1125,7 +1138,8 @@ module.exports.checkout = async (req, res) => {
       products: item,
       payment_type: req.body.payment_type,
       bonus_quantity: req.body.bonus_quantity,
-      delivery_fee: req.body.delivery_fee
+      delivery_fee: req.body.delivery_fee,
+      invoicenumber:yeardata
     };
 
     const order = await Order.create(obj);

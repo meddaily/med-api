@@ -5,7 +5,8 @@ const mongodb = require("mongodb");
 const fs = require("fs");
 const multer = require("multer");
 const Product_req = require("../Models/request");
-const ExcelJS = require('exceljs');
+
+
 
 var upload = multer({
   storage: multer.diskStorage({
@@ -44,22 +45,43 @@ module.exports.addProduct = (req, resp) => {
 
 // get banner for admin
 module.exports.getproduct = async (req, resp) => {
-  Product.find()
+
+  const value = req.query.value;
+  console.log("value",value);
+if (value) {
+  Product.find({category_id:value})
     .then((data) => {
-      // console.log(data)
+      console.log(data)
       if (!data || data.length == 0) {
-        response.sendResponse(resp, false, "Sorry, Product not found.");
+        return response.sendResponse(resp, false, "Sorry, Product not found.");
       }
-      response.senddataResponse(
+      return response.senddataResponse(
         resp,
         data,
-        false,
+        true,
         "Product show Successfully."
       );
     })
     .catch((err) => {
-      response.sendResponse(resp, false, err);
+      return response.sendResponse(resp, false, err);
     });
+}
+else{
+  Product.find({})
+  .then((data) => {
+    console.log(data)
+   
+    return response.senddataResponse(
+      resp,
+      data,
+      true,
+      "Product show Successfully."
+    );
+  })
+  .catch((err) => {
+    return response.sendResponse(resp, false, err);
+  });
+}
 };
 
 module.exports.inventory_download = async (req, res) => {
@@ -274,6 +296,8 @@ const { join } = require("path");
 const Category = require("../Models/Category");
 const Distributor = require("../Models/Distributor");
 const { setUncaughtExceptionCaptureCallback } = require("process");
+const Order = require('../Models/Order.js');
+const { findOne } = require('../Models/token.js');
 
 module.exports.bulk_upload = async (req, res) => {
   try {
@@ -408,6 +432,7 @@ module.exports.request_product = async (req, res) => {
     res.send({ status: false, message: "request failed" });
   }
 };
+ 
 module.exports.get_request_product = async (req, res) => {
   try {
     let data = await Product_req.find();
