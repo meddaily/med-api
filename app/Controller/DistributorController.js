@@ -334,11 +334,21 @@ module.exports.distributor_request = async (req, res) => {
     });
 };
 
+
+
 module.exports.distributor_get_product = async (req, res) => {
+  const distributorId = req.user._id;
+      const distributor = await Distributor.findOne({ _id: distributorId });
+      const distributortype = distributor.distributortype;
+      console.log(distributortype);
+      const category = await Category.findOne({ name: distributortype });
+      console.log(category);
+  console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",category._id);
   var pro = await Product.find(
-    {},
-    { _id: 1, title: 1, image: 1, description: 1, sub_title: 1 }
+    {category_id:category._id},
+    // { _id: 1, title: 1, image: 1, description: 1, sub_title: 1 }
   );
+  console.log(pro,"PRODUCT");
   pro = pro.map((product) => {
     return {
       _id: product._id,
@@ -641,8 +651,11 @@ module.exports.create_invoice = async (req, res) => {
 //     res.send({ err: true, data: err.message });
 //   }
 // };
+
+
 module.exports.my_inventory = async (req, res) => {
   const distributorId = req.user._id;
+
   Product.aggregate([
     { $match: { "distributors.distributorId": distributorId } },
     {
@@ -686,6 +699,8 @@ module.exports.my_inventory = async (req, res) => {
       res.send({ status: true, message: err.message });
     });
 };
+
+
 const XLSX = require("xlsx");
 const { mkdtemp } = require("fs").promises;
 const { join } = require("path");
@@ -1160,6 +1175,7 @@ module.exports.get_invoice = async (req, res) => {
 
 const util = require('util');
 const { log } = require("console");
+const Category = require("../Models/Category.js");
 const ejsRenderFile = util.promisify(ejs.renderFile);
 
 module.exports.get_summary = async (req, res) => {

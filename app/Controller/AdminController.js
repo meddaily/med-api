@@ -103,21 +103,37 @@ exports.login = async (req, res) => {
 // };
 module.exports.all_order = async (req, res) => {
   try {
-    const orders = await Order.find({ return_status: 0 }).sort({ createdAt: -1 });
+    
+    const startDate = req.query.startDate;
+    console.log("startdate", new Date(startDate));
+    const endDate = req.query.endDate;
+    console.log("enddate", new Date(endDate));
+
+    let obj = {};
+    if (!startDate && !endDate) {
+      obj ;
+    } else {
+      obj = {
+       
+        createdAt: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate),
+        },
+      };
+    }
+    const orders = await Order.find(obj).sort({ createdAt: -1 });
+    // console.log(orders,"obj");
 
     const mappedResults = await Promise.all(
       orders.map(async (e) => {
         let distributerName = await Distributor.findOne({ _id: e.distributor_id });
         let retailerName = await Retailer.findOne({ _id: e.retailer_id });
 
-        console.log("??????????????????????????distributerName???????????????????????????????", distributerName);
+        // console.log("??????????????????????????distributerName???????????????????????????????", distributerName);
 
         // Check if distributerName is defined before accessing its properties
 
         e._doc.distributor_name = distributerName?.firstname
-
-
-
         e._doc.retailer_name = retailerName?.ownername;
         return e;
       })
@@ -421,30 +437,10 @@ module.exports.get_all_report = async (req, res) => {
     const value = req.query.value
     console.log(value, "value");
 
-    const startDate = req.query.startDate;
-    console.log("startdate", new Date(startDate));
-    const endDate = req.query.endDate;
-    console.log("enddate", new Date(endDate));
-
-    let obj = {};
-    if (!startDate && !endDate) {
-      obj = {
-        return_status: { $gt: 1 },
-      };
-    } else {
-      obj = {
-        return_status: { $gt: 1 },
-        createdAt: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate),
-        },
-      };
-    }
-    console.log(obj);
 
     const data = await Order.find({
       [type]: value,
-     obj,
+  
     });
     // console.log(data,"DELIVERYFEE");
     // return res.send(data)
