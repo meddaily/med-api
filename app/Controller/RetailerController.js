@@ -554,8 +554,20 @@ module.exports.category_product = async (req, res) => {
     distributor_id.push(id._id.toString());
   });
 
-  var pro = await Product.find({ category_id: req.body.category_id });
-  console.log('pro', pro)
+  // Modify the query to search for products by name
+  var pro;
+  console.log(req.body.title,"title");
+  console.log(req.body.category_id,"category");
+  if (req.body.title) {
+    console.log(req.body.title,"title");
+    pro = await Product.find({
+      category_id:mongoose.Types.ObjectId(req.body.category_id),
+      title: { $regex: new RegExp(req.body.title, 'i') }, 
+    });
+  } else {
+    pro = await Product.find({ category_id:mongoose.Types.ObjectId(req.body.category_id)});
+  }
+
   pro.map((item) => {
     if (item.distributors.length > 0) {
       item.distributors.find((dis) => {
@@ -573,11 +585,48 @@ module.exports.category_product = async (req, res) => {
   });
 
   res.send({
-    product: pro,
+    data:productdata.length,
+    product: productdata, // Send the filtered product data
     status: true,
-    message: "Retailer data show successfull",
+    message: "Retailer data show successful",
   });
 };
+
+
+// module.exports.category_product = async (req, res) => {
+//   var productdata = [];
+//   var retailer = await Retailer.findOne({ _id: req.user._id });
+//   var retailercity = retailer.city;
+//   var distributor = await Distributor.find({ city: retailercity });
+//   var distributor_id = [];
+//   distributor.map((id) => {
+//     distributor_id.push(id._id.toString());
+//   });
+
+//   var pro = await Product.find({ category_id: req.body.category_id });
+//   console.log('pro', pro)
+//   pro.map((item) => {
+//     if (item.distributors.length > 0) {
+//       item.distributors.find((dis) => {
+//         if (distributor_id.includes(dis.distributorId)) {
+//           var obj = {
+//             _id: item._id,
+//             name: item.title,
+//             subtitle: item.sub_title,
+//             price: dis.price,
+//           };
+//           productdata.push(obj);
+//         }
+//       });
+//     }
+//   });
+
+//   res.send({
+//     product: pro,
+//     status: true,
+//     message: "Retailer data show successfull",
+//   });
+// };
 
 module.exports.get_product = async (req, res) => {
   var productdata = [];
