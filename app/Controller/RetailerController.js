@@ -521,6 +521,7 @@ module.exports.retailer_home = async (req, res) => {
           if (distributor_id.includes(dis.distributorId)) {
             var obj = {
               name: item.title,
+              distributor_id:dis.distributorId,
               distributor_name: dis.distributorName,
               price: dis.price,
             };
@@ -577,6 +578,7 @@ module.exports.category_product = async (req, res) => {
             name: item.title,
             subtitle: item.sub_title,
             price: dis.price,
+            distributerId:dis.distributorId
           };
           productdata.push(obj);
         }
