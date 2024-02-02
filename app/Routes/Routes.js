@@ -92,7 +92,7 @@ module.exports = (route) => {
     upload.bulkUpdateMulter,
     DistributorController.bulkUpdate
   );
-
+route.post("/get_productss",DistributorController.get_productss)
 
   // retailer api home
   route.get("/retailer_home", auth, RetailerController.retailer_home);

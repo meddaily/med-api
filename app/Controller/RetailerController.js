@@ -549,9 +549,9 @@ module.exports.category_product = async (req, res) => {
   var productdata = [];
   var retailer = await Retailer.findOne({ _id: req.user._id });
   var retailercity = retailer.city;
-  var distributor = await Distributor.find({ city: retailercity });
+  var distributors = await Distributor.find({ city: retailercity, category_id: mongoose.Types.ObjectId(req.body.category_id) });
   var distributor_id = [];
-  distributor.map((id) => {
+  distributors.map((id) => {
     distributor_id.push(id._id.toString());
   });
 
@@ -568,17 +568,23 @@ module.exports.category_product = async (req, res) => {
   } else {
     pro = await Product.find({ category_id:mongoose.Types.ObjectId(req.body.category_id)});
   }
+  var distributor_id = distributors.map((id) => id._id.toString());
 
   pro.map((item) => {
     if (item.distributors.length > 0) {
       item.distributors.find((dis) => {
         if (distributor_id.includes(dis.distributorId)) {
+          var distributorData = distributors.find(d => d._id.toString() === dis.distributorId)
           var obj = {
             _id: item._id,
             name: item.title,
             subtitle: item.sub_title,
             price: dis.price,
-            distributerId:dis.distributorId
+            distributor: {
+              _id: distributorData._id,
+              name: distributorData.firstname,
+              // Include other distributor fields as needed
+            }
           };
           productdata.push(obj);
         }

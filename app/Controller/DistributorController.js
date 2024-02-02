@@ -334,7 +334,54 @@ module.exports.distributor_request = async (req, res) => {
     });
 };
 
+module.exports.get_productss = async (req,res) =>{
+  
+  try {
+    const distributorId = req.body.distributorId; // Assuming a single distributor ID is passed in the request body
+    console.log(distributorId);
 
+
+    // const products = await Product.find({ 'distributors.distributorId': distributorId });
+    // console.log(products);
+    const productName = req.body.productName; // Get the product name from the request body
+
+    let query = { 'distributors.distributorId': distributorId };
+
+    if (productName && productName.trim() !== '') {
+      // If productName is provided, add it to the query
+      query = {
+        ...query,
+        'title': { $regex: new RegExp(productName, 'i') }, // Case-insensitive search for product name
+      };
+    }
+
+    const products = await Product.find(query);
+
+    var pro=products.map((product) => {
+      return {
+        _id: product._id,
+        name: product.title,
+        image: product.image,
+        sub_title: product.sub_title,
+        description: product.description,
+        price: product.distributors[0].price,
+      };
+    });
+  res.status(200).json({
+    status: true,
+    length:pro.length,
+    data: pro,
+    message: 'Distributors found successfully',
+  });
+} catch (error) {
+  console.error(error);
+  res.status(500).json({
+    status: false,
+    message: 'Internal Server Error',
+  });
+}
+
+}
 
 module.exports.distributor_get_product = async (req, res) => {
   const distributorId = req.user._id;
