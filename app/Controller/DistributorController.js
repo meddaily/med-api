@@ -414,7 +414,21 @@ module.exports.distributor_get_product = async (req, res) => {
 };
 
 module.exports.distributor_order = async (req, res) => {
-  await Order.find({ distributor_id: req.user._id, return_status: 0 })
+  let obj = {
+    distributor_id: req.user._id,
+    return_status: 0,
+  };
+
+  if (req.query.from && req.query.to) {
+    const fromDate = new Date(req.query.from)
+    const toDate = new Date(req.query.to)
+
+    obj.createdAt = {
+      $gte: fromDate,
+      $lte: toDate,
+    };
+  }
+  await Order.find(obj)
     .sort({ createdAt: -1 })
     .then(async (result) => {
       const mappedResults = await Promise.all(
@@ -843,6 +857,9 @@ module.exports.getDemofile = async (req, res) => {
 
 module.exports.bulkUpdate = async (req, res) => {
   try {
+    if (!req?.files || !req?.files[0] || path.extname(req.files[0].originalname).toLowerCase() !== '.xlsx') {
+      return res.send({ status: true, message: "Please upload a valid Excel file (.xlsx)"});
+    }
     fileBuffer = req?.files[0]?.buffer;
     const filePath = `bulkCSV${Date.now}.xlsx`;
     fs.writeFileSync(filePath, fileBuffer);
@@ -896,7 +913,7 @@ module.exports.bulkUpdate = async (req, res) => {
     res.send({ status: true, message: "Data updated successfully" });
   } catch (err) {
     console.log(err);
-    fs.unlinkSync(filePath);
+    // fs.unlinkSync(filePath);
     res.send({ status: false, message: err.message });
   }
 };

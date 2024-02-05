@@ -5,6 +5,7 @@ const mongodb = require("mongodb");
 const fs = require("fs");
 const multer = require("multer");
 const Product_req = require("../Models/request");
+const path = require("path");
 
 
 
@@ -302,6 +303,10 @@ const { findOne } = require('../Models/token.js');
 module.exports.bulk_upload = async (req, res) => {
   try {
     // filePath = req.file.path;
+
+    if (!req?.files || !req?.files[0] || path.extname(req.files[0].originalname).toLowerCase() !== '.xlsx') {
+      return res.send({ status: true, message: "Please upload a valid Excel file (.xlsx)"});
+    }
     console.log(req.body, 'Body')
     console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", req.files);
     fileBuffer = req?.files[0]?.buffer;
